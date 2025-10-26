@@ -2,9 +2,27 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import './ChatBot.css';
 
-function ChatBot() {
+function ChatBot({ onMarkdownUpdate }) {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
+
+    const handleRevert = async () => {
+        try {
+            const response = await axios.post('/revert');
+            // 챗봇 응답을 대화 목록에 추가
+            const botMessage = {
+                text: response.data.reply || '이전 상태로 되돌렸습니다.',
+                sender: 'bot'
+            };
+            setMessages(prev => [...prev, botMessage]);
+        } catch (error) {
+            console.error('Error:', error);
+            setMessages(prev => [...prev, {
+                text: '되돌리기 작업 중 오류가 발생했습니다.',
+                sender: 'bot'
+            }]);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -43,6 +61,11 @@ function ChatBot() {
 
     return (
         <div className="chatbot-container">
+            <div className="chat-controls">
+                <button onClick={handleRevert} className="revert-button">
+                    최근 변경사항 되돌리기
+                </button>
+            </div>
             <div className="chat-messages">
                 {messages.map((message, index) => (
                     <div key={index} className={`message ${message.sender}`}>

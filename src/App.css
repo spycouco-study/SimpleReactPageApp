@@ -1,14 +1,17 @@
 .App {
   text-align: center;
-  min-height: 100vh;
+  height: 100vh;
   background-color: #f0f2f5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .App-header {
   background-color: #282c34;
-  padding: 20px;
+  padding: 12px;
   color: white;
-  margin-bottom: 20px;
+  flex-shrink: 0;
 }
 
 .App-header h1 {
@@ -17,5 +20,39 @@
 }
 
 main {
-  padding: 0 20px;
+  flex: 1;
+  overflow: hidden;
+  padding: 16px;
+  min-height: 0;
+}
+
+.split-layout {
+  display: flex;
+  gap: 16px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chat-section {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.markdown-section {
+  flex: 1;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.markdown-section h1,
+.markdown-section h2,
+.markdown-section h3 {
+  margin-top: 0;
 }

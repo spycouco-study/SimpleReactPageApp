@@ -1,18 +1,43 @@
 .chatbot-container {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    padding: 16px;
     border-radius: 10px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    min-height: 0;
+}
+
+.chat-controls {
+    margin-bottom: 16px;
+}
+
+.revert-button {
+    padding: 8px 16px;
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.revert-button:hover {
+    background-color: #c82333;
 }
 
 .chat-messages {
-    height: 400px;
+    flex: 1;
     overflow-y: auto;
-    margin-bottom: 20px;
-    padding: 10px;
+    margin-bottom: 16px;
+    padding: 12px;
     background-color: #f8f9fa;
     border-radius: 8px;
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+    min-height: 0;
 }
 
 .message {
