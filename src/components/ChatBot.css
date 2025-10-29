@@ -10,7 +10,10 @@
 }
 
 .chat-controls {
-    margin-bottom: 16px;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid #e9ecef;
 }
 
 .revert-button {
@@ -31,10 +34,8 @@
 .chat-messages {
     flex: 1;
     overflow-y: auto;
-    margin-bottom: 16px;
     padding: 12px;
     background-color: #f8f9fa;
-    border-radius: 8px;
     scrollbar-width: thin;
     scrollbar-color: #888 #f1f1f1;
     min-height: 0;
@@ -61,26 +62,61 @@
 
 .chat-input-form {
     display: flex;
-    gap: 10px;
+    gap: 8px;
+    padding: 12px;
+    background-color: #f8f9fa;
+    border-radius: 0 0 8px 8px;
+    border-top: 1px solid #e9ecef;
 }
 
 .chat-input {
     flex: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
+    padding: 12px;
+    border: 1px solid #ced4da;
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 14px;
+    resize: none;
+    height: 45px;
+    max-height: 150px;
+    overflow-y: auto;
+    line-height: 1.5;
+    font-family: inherit;
 }
 
 .send-button {
-    padding: 10px 20px;
+    padding: 0 20px;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 14px;
+    align-self: stretch;
 }
 
 .send-button:hover {
     background-color: #0056b3;
+}
+
+/* 스크롤바 스타일링 */
+.chat-messages::-webkit-scrollbar,
+.chat-input::-webkit-scrollbar {
+    width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track,
+.chat-input::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.chat-messages::-webkit-scrollbar-thumb,
+.chat-input::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover,
+.chat-input::-webkit-scrollbar-thumb:hover {
+    background: #555;
 }
