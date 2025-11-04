@@ -58,7 +58,8 @@ function ChatBot({ onMarkdownUpdate }) {
 
         try {
             // 서버로 메시지 전송
-            const response = await axios.post('/process-code', {
+            //const response = await axios.post('/process-code', {
+            const response = await axios.post('/question', {
                 message: currentMessage
             });
 

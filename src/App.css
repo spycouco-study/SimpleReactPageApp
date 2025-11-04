@@ -48,19 +48,63 @@ main {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 우측: 마크다운/편집 섹션 */
+/* 우측: 콘텐츠 섹션 */
 /* -------------------------------------------------------------------------- */
+.content-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* 탭 네비게이션 */
+.tab-navigation {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background-color: #e0e0e0;
+  transition: all 0.3s ease;
+}
+
+.tab-button.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.tab-button:hover {
+  background-color: #0056b3;
+  color: white;
+}
+
+/* 마크다운 섹션 */
 .markdown-section {
   flex: 1;
   background: white;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* 그림자 강화 */
-  /* 내부 콘텐츠를 세로로 배열 */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex; 
   flex-direction: column; 
   text-align: left;
-  overflow: hidden; /* 버튼과 에디터/뷰어가 영역을 벗어나지 않도록 */
+  overflow: hidden;
+}
+
+/* 바운딩 박스 섹션 */
+.bounding-box-section {
+  flex: 1;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: auto;
 }
 
 /* 섹션 내 제목 스타일 */
