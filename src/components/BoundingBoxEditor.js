@@ -261,7 +261,11 @@ const BoundingBoxEditor = () => {
         // 번호 표시
         ctx.fillStyle = isSelected ? '#00FF00' : '#FF0000';
         ctx.font = '16px Arial';
-        ctx.fillText(`${index + 1}`, x + 5, y - 5);
+        const textMetrics = ctx.measureText(`${index + 1}`);
+        const padding = 5;
+        const textX = x + width - textMetrics.width - padding;
+        const textY = y + height - padding;
+        ctx.fillText(`${index + 1}`, textX, textY);
 
         // 선택된 박스의 경우 리사이즈 핸들 표시
         if (isSelected) {
