@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import './BoundingBoxEditor.css';
 
 const BoundingBoxEditor = () => {
@@ -10,8 +10,10 @@ const BoundingBoxEditor = () => {
     const [currentFrame, setCurrentFrame] = useState(0);
     const [selectedBox, setSelectedBox] = useState(null);
     const [isResizing, setIsResizing] = useState(false);
+    const [isMoving, setIsMoving] = useState(false);
     const [resizeHandle, setResizeHandle] = useState(null);
     const [lastMouseEvent, setLastMouseEvent] = useState(null);
+    const [moveOffset, setMoveOffset] = useState({ x: 0, y: 0 });
     
     const canvasRef = useRef(null);
     const previewCanvasRef = useRef(null);
@@ -101,6 +103,21 @@ const BoundingBoxEditor = () => {
         const clickedBoxIndex = boxes.findIndex(box => isClickNearBox(x, y, box));
         if (clickedBoxIndex !== -1) {
             setSelectedBox(clickedBoxIndex);
+            const box = boxes[clickedBoxIndex];
+            const boxX = box.width > 0 ? box.startX : box.startX + box.width;
+            const boxY = box.height > 0 ? box.startY : box.startY + box.height;
+            setMoveOffset({
+                x: x - boxX,
+                y: y - boxY
+            });
+            setIsMoving(true);
+
+            // Ctrl 키가 눌린 경우 박스 복제
+            if (e.ctrlKey) {
+                const newBox = { ...box };
+                setBoxes(prev => [...prev, newBox]);
+                setSelectedBox(boxes.length);
+            }
             return;
         }
 
@@ -132,6 +149,28 @@ const BoundingBoxEditor = () => {
             return;
         }
 
+        // 박스 이동 중
+        if (isMoving && selectedBox !== null) {
+            const newX = x - moveOffset.x;
+            const newY = y - moveOffset.y;
+            
+            setBoxes(prev => prev.map((box, i) => {
+                if (i === selectedBox) {
+                    const width = box.width;
+                    const height = box.height;
+                    return {
+                        startX: newX,
+                        startY: newY,
+                        width,
+                        height
+                    };
+                }
+                return box;
+            }));
+            drawCanvas();
+            return;
+        }
+
         // 새 박스 그리기
         if (isDrawing && currentBox) {
             setCurrentBox(prev => ({
@@ -151,6 +190,11 @@ const BoundingBoxEditor = () => {
             setResizeHandle(null);
             return;
         }
+
+        if (isMoving) {
+            setIsMoving(false);
+            return;
+        }
         
         if (isDrawing && currentBox) {
             setIsDrawing(false);
@@ -161,7 +205,7 @@ const BoundingBoxEditor = () => {
     };
 
     // 캔버스 그리기
-    const drawCanvas = () => {
+    const drawCanvas = useCallback(() => {
         if (!image || !canvasRef.current) return;
 
         const canvas = canvasRef.current;
@@ -200,9 +244,9 @@ const BoundingBoxEditor = () => {
         } else {
             canvas.style.cursor = 'crosshair';
         }
-    };
+    }, [image, boxes, currentBox, selectedBox, isResizing, lastMouseEvent]);
 
-    const drawBox = (ctx, box, index) => {
+    const drawBox = useCallback((ctx, box, index) => {
         const isSelected = selectedBox === index;
         const x = box.width > 0 ? box.startX : box.startX + box.width;
         const y = box.height > 0 ? box.startY : box.startY + box.height;
@@ -238,7 +282,7 @@ const BoundingBoxEditor = () => {
         }
 
         return [];
-    };
+    }, [selectedBox]);
 
     const isClickNearBox = (x, y, box) => {
         const boxX = box.width > 0 ? box.startX : box.startX + box.width;
@@ -300,6 +344,86 @@ const BoundingBoxEditor = () => {
         setIsPlaying(!isPlaying);
     };
 
+    // 키보드 이벤트 핸들러
+    const handleKeyDown = (e) => {
+        if (selectedBox === null || !boxes[selectedBox]) return;
+
+        const MOVE_STEP = 1; // 기본 이동 단위 (픽셀)
+        const MOVE_STEP_FAST = 5; // Shift 키와 함께 누를 때의 이동 단위
+        
+        const step = e.shiftKey ? MOVE_STEP_FAST : MOVE_STEP;
+        const box = boxes[selectedBox];
+        let newBox = { ...box };
+
+        switch (e.key) {
+            case 'ArrowLeft':
+                newBox.startX -= step;
+                e.preventDefault();
+                break;
+            case 'ArrowRight':
+                newBox.startX += step;
+                e.preventDefault();
+                break;
+            case 'ArrowUp':
+                newBox.startY -= step;
+                e.preventDefault();
+                break;
+            case 'ArrowDown':
+                newBox.startY += step;
+                e.preventDefault();
+                break;
+            default:
+                return;
+        }
+
+        setBoxes(prev => prev.map((b, i) => i === selectedBox ? newBox : b));
+        drawCanvas();
+    };
+
+    // 키보드 이벤트 리스너 등록
+    useEffect(() => {
+        const keyHandler = (e) => {
+            if (selectedBox === null || !boxes[selectedBox]) return;
+
+            const MOVE_STEP = 1; // 기본 이동 단위 (픽셀)
+            const MOVE_STEP_FAST = 5; // Shift 키와 함께 누를 때의 이동 단위
+            
+            const step = e.shiftKey ? MOVE_STEP_FAST : MOVE_STEP;
+            const box = boxes[selectedBox];
+            let newBox = { ...box };
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                    newBox.startX -= step;
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    newBox.startX += step;
+                    e.preventDefault();
+                    break;
+                case 'ArrowUp':
+                    newBox.startY -= step;
+                    e.preventDefault();
+                    break;
+                case 'ArrowDown':
+                    newBox.startY += step;
+                    e.preventDefault();
+                    break;
+                default:
+                    return;
+            }
+
+            setBoxes(prev => prev.map((b, i) => i === selectedBox ? newBox : b));
+            drawCanvas();
+        };
+
+        window.addEventListener('keydown', keyHandler);
+        return () => {
+            window.removeEventListener('keydown', keyHandler);
+        };
+    }, [selectedBox, boxes, drawCanvas]); // drawCanvas 함수도 의존성에 추가
+
+    // 애니메이션 재생 효과
     useEffect(() => {
         if (isPlaying && boxes.length > 0) {
             const animate = () => {
