@@ -277,7 +277,14 @@
     transition: all 0.2s ease;
 }
 
-.submit-button:hover {
+.submit-button:disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.submit-button:not(:disabled):hover {
     background-color: #0056b3;
     transform: translateY(-1px);
 }

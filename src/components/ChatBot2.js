@@ -7,6 +7,7 @@ function ChatBot({ onMarkdownUpdate }) {
     const [inputMessage, setInputMessage] = useState('');
     const [answers, setAnswers] = useState({});
     const [openRequestInputs, setOpenRequestInputs] = useState(new Set());
+    const [additionalAnswers, setAdditionalAnswers] = useState({});
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -233,6 +234,11 @@ function ChatBot({ onMarkdownUpdate }) {
                                                             newSet.delete(requestId);
                                                             return newSet;
                                                         });
+                                                        setAdditionalAnswers(prev => {
+                                                            const newAnswers = { ...prev };
+                                                            delete newAnswers[requestId];
+                                                            return newAnswers;
+                                                        });
                                                     }}
                                                 >
                                                     ×
@@ -241,7 +247,14 @@ function ChatBot({ onMarkdownUpdate }) {
                                                     autoFocus
                                                     type="text"
                                                     className="answer-input"
+                                                    value={additionalAnswers[requestId] || ''}
                                                     placeholder="추가 요청을 입력하세요..."
+                                                    onChange={(e) => {
+                                                        setAdditionalAnswers(prev => ({
+                                                            ...prev,
+                                                            [requestId]: e.target.value
+                                                        }));
+                                                    }}
                                                     onKeyPress={(e) => {
                                                         if (e.key === 'Enter' && e.target.value.trim()) {
                                                             handleSubmit({
@@ -253,9 +266,13 @@ function ChatBot({ onMarkdownUpdate }) {
                                                                 newSet.delete(requestId);
                                                                 return newSet;
                                                             });
+                                                            setAdditionalAnswers(prev => {
+                                                                const newAnswers = { ...prev };
+                                                                delete newAnswers[requestId];
+                                                                return newAnswers;
+                                                            });
                                                         }
                                                     }}
-                                                    // 빈 값에 대한 onBlur 처리 제거
                                                 />
                                             </div>
                                         ))}
@@ -274,9 +291,32 @@ function ChatBot({ onMarkdownUpdate }) {
                                         <div className="submit-group">
                                             <button 
                                                 className="submit-button"
+                                                disabled={
+                                                    // 기존 질문들의 답변 확인
+                                                    !item.messages.every((msg, msgIndex) => 
+                                                        msg.type === 'comment' || 
+                                                        answers[`q-${index}-${msgIndex}`]?.trim()
+                                                    ) ||
+                                                    // 추가 요청 입력창이 있고 답변이 비어있는 경우 체크
+                                                    Array.from(openRequestInputs).some(requestId => 
+                                                        !additionalAnswers[requestId]?.trim()
+                                                    )
+                                                }
                                                 onClick={() => {
-                                                    // TODO: 여기에 제출 로직 추가
-                                                    console.log('제출되었습니다');
+                                                    // 기존 답변들 수집
+                                                    const mainAnswers = item.messages.reduce((acc, msg, msgIndex) => {
+                                                        if (msg.type !== 'comment') {
+                                                            acc[`q-${index}-${msgIndex}`] = answers[`q-${index}-${msgIndex}`];
+                                                        }
+                                                        return acc;
+                                                    }, {});
+                                                    
+                                                    // 추가 요청 답변들은 이미 additionalAnswers에 있음
+                                                    console.log('제출된 답변들:', {
+                                                        mainAnswers,
+                                                        additionalAnswers
+                                                    });
+                                                    // TODO: 여기에 서버 제출 로직 추가
                                                 }}
                                             >
                                                 제출
