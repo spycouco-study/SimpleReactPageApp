@@ -5,6 +5,7 @@ import './ChatBot2.css';
 function ChatBot({ onMarkdownUpdate }) {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
+    const [answers, setAnswers] = useState({});
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -14,6 +15,32 @@ function ChatBot({ onMarkdownUpdate }) {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    const handleAnswerSubmit = async (questionId, answer) => {
+        try {
+            // 답변을 서버로 전송
+            const response = await axios.post('/answer', {
+                questionId,
+                answer
+            });
+
+            // 답변을 메시지 목록에 추가
+            if (response.data.reply) {
+                setMessages(prev => [...prev, {
+                    text: answer,
+                    sender: 'user'
+                }]);
+            }
+
+            // 답변 입력창 초기화
+            setAnswers(prev => ({
+                ...prev,
+                [questionId]: ''
+            }));
+        } catch (error) {
+            console.error('Error submitting answer:', error);
+        }
+    };
 
     const handleRevert = async () => {
         try {
@@ -125,6 +152,13 @@ function ChatBot({ onMarkdownUpdate }) {
                                 {message.text}
                             </div>
                         );
+                    } else if (message.text === '응답을 생성하는 중입니다...') {
+                        // 임시 응답 메시지는 별도로 처리
+                        result.push(
+                            <div key={message.id || index} className="message bot loading">
+                                {message.text}
+                            </div>
+                        );
                     } else {
                         // 봇 메시지는 그룹화
                         if (index === 0 || messages[index - 1].sender !== 'bot') {
@@ -155,9 +189,27 @@ function ChatBot({ onMarkdownUpdate }) {
                                             </div>
                                         );
                                     } else {
+                                        const questionId = `q-${index}-${messageIndex}`;
                                         return (
-                                            <div key={message.id || messageIndex} className="message bot">
-                                                {message.text}
+                                            <div key={message.id || messageIndex} className="message-container">
+                                                <div className="message bot">
+                                                    {message.text}
+                                                    <input
+                                                        type="text"
+                                                        className="answer-input"
+                                                        placeholder="답변을 입력하세요..."
+                                                        value={answers[questionId] || ''}
+                                                        onChange={(e) => setAnswers(prev => ({
+                                                            ...prev,
+                                                            [questionId]: e.target.value
+                                                        }))}
+                                                        onKeyPress={(e) => {
+                                                            if (e.key === 'Enter' && answers[questionId]?.trim()) {
+                                                                handleAnswerSubmit(questionId, answers[questionId]);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
                                             </div>
                                         );
                                     }
