@@ -17,7 +17,6 @@ const BoundingBoxEditor = () => {
     
     const canvasRef = useRef(null);
     const previewCanvasRef = useRef(null);
-    const animationRef = useRef(null);
 
     // 이미지 업로드 처리
     const calculateImageDimensions = (imgWidth, imgHeight, maxWidth, maxHeight) => {
@@ -204,48 +203,6 @@ const BoundingBoxEditor = () => {
         }
     };
 
-    // 캔버스 그리기
-    const drawCanvas = useCallback(() => {
-        if (!image || !canvasRef.current) return;
-
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        
-        // 캔버스 초기화
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // 이미지를 캔버스 크기에 맞게 그리기
-        ctx.drawImage(image, 0, 0, image.displayWidth, image.displayHeight);
-        
-        // 저장된 박스들 그리기
-        boxes.forEach((box, index) => drawBox(ctx, box, index));
-        
-        // 현재 그리고 있는 박스 그리기
-        if (currentBox) {
-            drawBox(ctx, currentBox, boxes.length);
-        }
-
-        // 커서 스타일 설정
-        if (selectedBox !== null && !isResizing) {
-            const box = boxes[selectedBox];
-            const handles = drawBox(ctx, box, selectedBox);
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = lastMouseEvent?.clientX - rect.left;
-            const mouseY = lastMouseEvent?.clientY - rect.top;
-
-            if (mouseX && mouseY) {
-                const clickedHandle = getClickedHandle(mouseX, mouseY, handles);
-                if (clickedHandle) {
-                    canvas.style.cursor = clickedHandle.cursor;
-                } else {
-                    canvas.style.cursor = 'move';
-                }
-            }
-        } else {
-            canvas.style.cursor = 'crosshair';
-        }
-    }, [image, boxes, currentBox, selectedBox, isResizing, lastMouseEvent]);
-
     const drawBox = useCallback((ctx, box, index) => {
         const isSelected = selectedBox === index;
         const x = box.width > 0 ? box.startX : box.startX + box.width;
@@ -287,6 +244,48 @@ const BoundingBoxEditor = () => {
 
         return [];
     }, [selectedBox]);
+
+    // 캔버스 그리기
+    const drawCanvas = useCallback(() => {
+        if (!image || !canvasRef.current) return;
+
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        
+        // 캔버스 초기화
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 이미지를 캔버스 크기에 맞게 그리기
+        ctx.drawImage(image, 0, 0, image.displayWidth, image.displayHeight);
+        
+        // 저장된 박스들 그리기
+        boxes.forEach((box, index) => drawBox(ctx, box, index));
+        
+        // 현재 그리고 있는 박스 그리기
+        if (currentBox) {
+            drawBox(ctx, currentBox, boxes.length);
+        }
+
+        // 커서 스타일 설정
+        if (selectedBox !== null && !isResizing) {
+            const box = boxes[selectedBox];
+            const handles = drawBox(ctx, box, selectedBox);
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = lastMouseEvent?.clientX - rect.left;
+            const mouseY = lastMouseEvent?.clientY - rect.top;
+
+            if (mouseX && mouseY) {
+                const clickedHandle = getClickedHandle(mouseX, mouseY, handles);
+                if (clickedHandle) {
+                    canvas.style.cursor = clickedHandle.cursor;
+                } else {
+                    canvas.style.cursor = 'move';
+                }
+            }
+        } else {
+            canvas.style.cursor = 'crosshair';
+        }
+    }, [image, boxes, currentBox, selectedBox, isResizing, lastMouseEvent, drawBox]);
 
     const isClickNearBox = (x, y, box) => {
         const boxX = box.width > 0 ? box.startX : box.startX + box.width;
@@ -348,41 +347,41 @@ const BoundingBoxEditor = () => {
         setIsPlaying(!isPlaying);
     };
 
-    // 키보드 이벤트 핸들러
-    const handleKeyDown = (e) => {
-        if (selectedBox === null || !boxes[selectedBox]) return;
+    // // 키보드 이벤트 핸들러
+    // const handleKeyDown = (e) => {
+    //     if (selectedBox === null || !boxes[selectedBox]) return;
 
-        const MOVE_STEP = 1; // 기본 이동 단위 (픽셀)
-        const MOVE_STEP_FAST = 5; // Shift 키와 함께 누를 때의 이동 단위
+    //     const MOVE_STEP = 1; // 기본 이동 단위 (픽셀)
+    //     const MOVE_STEP_FAST = 5; // Shift 키와 함께 누를 때의 이동 단위
         
-        const step = e.shiftKey ? MOVE_STEP_FAST : MOVE_STEP;
-        const box = boxes[selectedBox];
-        let newBox = { ...box };
+    //     const step = e.shiftKey ? MOVE_STEP_FAST : MOVE_STEP;
+    //     const box = boxes[selectedBox];
+    //     let newBox = { ...box };
 
-        switch (e.key) {
-            case 'ArrowLeft':
-                newBox.startX -= step;
-                e.preventDefault();
-                break;
-            case 'ArrowRight':
-                newBox.startX += step;
-                e.preventDefault();
-                break;
-            case 'ArrowUp':
-                newBox.startY -= step;
-                e.preventDefault();
-                break;
-            case 'ArrowDown':
-                newBox.startY += step;
-                e.preventDefault();
-                break;
-            default:
-                return;
-        }
+    //     switch (e.key) {
+    //         case 'ArrowLeft':
+    //             newBox.startX -= step;
+    //             e.preventDefault();
+    //             break;
+    //         case 'ArrowRight':
+    //             newBox.startX += step;
+    //             e.preventDefault();
+    //             break;
+    //         case 'ArrowUp':
+    //             newBox.startY -= step;
+    //             e.preventDefault();
+    //             break;
+    //         case 'ArrowDown':
+    //             newBox.startY += step;
+    //             e.preventDefault();
+    //             break;
+    //         default:
+    //             return;
+    //     }
 
-        setBoxes(prev => prev.map((b, i) => i === selectedBox ? newBox : b));
-        drawCanvas();
-    };
+    //     setBoxes(prev => prev.map((b, i) => i === selectedBox ? newBox : b));
+    //     drawCanvas();
+    // };
 
     // 키보드 이벤트 리스너 등록
     useEffect(() => {

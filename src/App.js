@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import ChatBot from './components/ChatBot';
+import ChatBot2 from './components/ChatBot2';
 import ReactMarkdown from 'react-markdown';
 import BoundingBoxEditor from './components/BoundingBoxEditor';
 
@@ -73,6 +74,12 @@ function App() {
             >
               바운딩 박스
             </button>
+            <button 
+              onClick={() => setActiveTab('chatbot2')}
+              className={`tab-button ${activeTab === 'chatbot2' ? 'active' : ''}`}
+            >
+              챗봇 2
+            </button>
           </div>
 
           {/* 마크다운 탭 */}
@@ -92,6 +99,13 @@ function App() {
           {activeTab === 'boundingBox' && (
             <div className="bounding-box-section">
               <BoundingBoxEditor />
+            </div>
+          )}
+
+          {/* 챗봇 2 탭 */}
+          {activeTab === 'chatbot2' && (
+            <div className="chatbot2-section">
+              <ChatBot2 onMarkdownUpdate={handleMarkdownUpdate} />
             </div>
           )}
         </div>

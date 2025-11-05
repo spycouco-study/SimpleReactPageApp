@@ -37,14 +37,24 @@ main {
   overflow: hidden;
 }
 
-/* -------------------------------------------------------------------------- */
-/* 좌측: 챗봇 섹션 */
-/* -------------------------------------------------------------------------- */
+/* 챗봇 섹션 */
 .chat-section {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
+}
+
+/* 챗봇2 섹션 */
+.chatbot2-section {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 /* -------------------------------------------------------------------------- */

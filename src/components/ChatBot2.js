@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import './ChatBot.css';
+import './ChatBot2.css';
 
 function ChatBot({ onMarkdownUpdate }) {
     const [messages, setMessages] = useState([]);
@@ -58,16 +58,36 @@ function ChatBot({ onMarkdownUpdate }) {
 
         try {
             // 서버로 메시지 전송
-            const response = await axios.post('/process-code', {
+            //const response = await axios.post('/process-code', {
+            const response = await axios.post('/question', {
                 message: currentMessage
             });
 
-            // 임시 메시지를 실제 응답으로 교체
-            setMessages(prev => prev.map(msg => 
-                msg.id === tempBotMessage.id
-                    ? { text: response.data.reply, sender: 'bot' }
-                    : msg
-            ));
+            // 서버 응답을 파싱하여 여러 메시지로 분리
+            const responseData = JSON.parse(response.data.reply);
+            
+            // 임시 메시지 제거
+            setMessages(prev => prev.filter(msg => msg.id !== tempBotMessage.id));
+            
+            // 코멘트가 있다면 추가
+            if (responseData.comment) {
+                setMessages(prev => [...prev, {
+                    text: responseData.comment,
+                    sender: 'bot'
+                }]);
+            }
+            
+            // 질문들 추가
+            if (responseData.questions && Array.isArray(responseData.questions)) {
+                responseData.questions.forEach(question => {
+                    if (question) {  // 빈 문자열이 아닌 경우만 추가
+                        setMessages(prev => [...prev, {
+                            text: question,
+                            sender: 'bot'
+                        }]);
+                    }
+                });
+            }
         } catch (error) {
             console.error('Error:', error);
             // 에러 메시지 표시
