@@ -301,33 +301,35 @@ function ChatBot({ onMarkdownUpdate }) {
                                                 />
                                             </div>
                                         ))}
-                                        <div 
-                                            className="message bot clickable-message"
-                                            onClick={() => {
-                                                setOpenRequestInputs(prev => {
-                                                    const newSet = new Set(prev);
-                                                    newSet.add(`request-${Date.now()}`);
-                                                    return newSet;
-                                                });
-                                            }}
-                                        >
-                                            요청 추가하기
-                                        </div>
-                                        <div className="submit-group">
-                                            <button 
-                                                className="submit-button"
-                                                disabled={
-                                                    // 기존 질문들의 답변 확인
-                                                    !item.messages.every((msg, msgIndex) => 
-                                                        msg.type === 'comment' || 
-                                                        answers[`q-${index}-${msgIndex}`]?.trim()
-                                                    ) ||
-                                                    // 추가 요청 입력창이 있고 답변이 비어있는 경우 체크
-                                                    Array.from(openRequestInputs).some(requestId => 
-                                                        !additionalAnswers[requestId]?.trim()
-                                                    )
-                                                }
-                                                onClick={async () => {
+                                        {!submittedGroups.has(`group-${index}`) && (
+                                            <>
+                                            <div 
+                                                className="message bot clickable-message"
+                                                onClick={() => {
+                                                    setOpenRequestInputs(prev => {
+                                                        const newSet = new Set(prev);
+                                                        newSet.add(`request-${Date.now()}`);
+                                                        return newSet;
+                                                    });
+                                                }}
+                                            >
+                                                요청 추가하기
+                                            </div>
+                                            <div className="submit-group">
+                                                <button 
+                                                    className="submit-button"
+                                                    disabled={
+                                                        // 기존 질문들의 답변 확인
+                                                        !item.messages.every((msg, msgIndex) => 
+                                                            msg.type === 'comment' || 
+                                                            answers[`q-${index}-${msgIndex}`]?.trim()
+                                                        ) ||
+                                                        // 추가 요청 입력창이 있고 답변이 비어있는 경우 체크
+                                                        Array.from(openRequestInputs).some(requestId => 
+                                                            !additionalAnswers[requestId]?.trim()
+                                                        )
+                                                    }
+                                                    onClick={async () => {
                                                     // 질문-답변 쌍 수집
                                                     const questionAnswerPairs = item.messages
                                                         .filter(msg => msg.type !== 'comment')
@@ -378,6 +380,10 @@ function ChatBot({ onMarkdownUpdate }) {
                                                                 newSet.add(`group-${index}`);
                                                                 return newSet;
                                                             });
+
+                                                             // 추가 요청 입력 상태 정리 (해당 그룹 제출 후 잔여 입력 제거)
+                                                             setOpenRequestInputs(new Set());
+                                                             setAdditionalAnswers({});
                                                         } else {
                                                             // 서버에서 오류 응답을 보낸 경우
                                                             throw new Error(response.data.message || '서버 처리 중 오류가 발생했습니다.');
@@ -400,10 +406,12 @@ function ChatBot({ onMarkdownUpdate }) {
                                                     }
                                                     // TODO: 여기에 서버 제출 로직 추가
                                                 }}
-                                            >
-                                                제출
-                                            </button>
-                                        </div>
+                                                >
+                                                    제출
+                                                </button>
+                                            </div>
+                                            </>
+                                        )}
                                     </div>
                                 )}
                             </div>
