@@ -10,6 +10,26 @@ function ChatBot({ onMarkdownUpdate }) {
     const [additionalAnswers, setAdditionalAnswers] = useState({});
     const messagesEndRef = useRef(null);
 
+    const hasUnansweredQuestions = () => {
+        // 마지막 봇 메시지 그룹을 찾아서 답변이 필요한 질문이 있는지 확인
+        const lastBotGroup = [...messages].reverse().find(msg => 
+            msg.sender === 'bot' && !msg.text.includes('응답을 생성하는 중입니다...')
+        );
+
+        if (!lastBotGroup) return false;
+
+        // 질문에 대한 답변이 모두 있는지 확인
+        const allQuestionsAnswered = messages
+            .filter(msg => msg.sender === 'bot' && msg.type === 'question')
+            .every((msg, index) => answers[`q-${index}`]?.trim());
+
+        // 추가 요청에 대한 답변이 모두 있는지 확인
+        const allAdditionalAnswered = Array.from(openRequestInputs)
+            .every(requestId => additionalAnswers[requestId]?.trim());
+
+        return !(allQuestionsAnswered && allAdditionalAnswered);
+    };
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -337,15 +357,24 @@ function ChatBot({ onMarkdownUpdate }) {
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
+                        if (e.key === 'Enter' && !e.shiftKey && !hasUnansweredQuestions()) {
                             e.preventDefault();
                             handleSubmit(e);
                         }
                     }}
-                    placeholder="메시지를 입력하세요... (Shift + Enter로 줄바꿈)"
+                    placeholder={hasUnansweredQuestions() ? 
+                        "모든 질문에 답변을 입력해주세요." : 
+                        "메시지를 입력하세요... (Shift + Enter로 줄바꿈)"}
                     className="chat-input"
+                    disabled={hasUnansweredQuestions()}
                 />
-                <button type="submit" className="send-button">전송</button>
+                <button 
+                    type="submit" 
+                    className="send-button"
+                    disabled={hasUnansweredQuestions()}
+                >
+                    전송
+                </button>
             </form>
         </div>
     );
