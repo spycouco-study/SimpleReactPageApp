@@ -40,6 +40,79 @@
     box-shadow: 0 0 0 2px rgba(0,123,255,.25);
 }
 
+.additional-request {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.clickable-message {
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.clickable-message:hover {
+    opacity: 1;
+    transform: scale(1.02);
+}
+
+.message.bot.with-input {
+    padding-bottom: 12px;
+    background-color: #e9ecef;
+}
+
+.message.bot.with-input {
+    position: relative;
+}
+
+.message.bot.with-input::before {
+    content: '추가 요청';
+    display: block;
+    margin: 4px 0 8px 12px;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.message.bot.with-input .answer-input {
+    position: relative;
+    width: calc(100% - 16px);
+    margin: 8px auto 0;
+    background-color: white;
+}
+
+.additional-request .message.bot {
+    background-color: #f0deede8;
+    margin: 0;
+    margin-right: 5px;
+    margin-left: 5px;
+    position: relative;
+}
+
+.delete-request {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.delete-request:hover {
+    background-color: rgba(220, 53, 69, 0.2);
+    transform: scale(1.1);
+}
+
 .chat-input-form {
     display: flex;
     gap: 8px;
@@ -129,8 +202,9 @@
 .message.bot {
     background-color: #f0deede8;
     color: black;
-    margin-right: auto;
+    margin-right: 5px;
     margin-left: 5px;
+    word-wrap: break-word;
 }
 
 .message.bot.loading {
@@ -179,6 +253,37 @@
 
 .send-button:hover {
     background-color: #0056b3;
+}
+
+.submit-group {
+    display: flex;
+    justify-content: center;    
+    padding: 12px 0;
+    margin-top: 8px;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+.submit-button {
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.submit-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+.submit-button:active {
+    transform: translateY(0);
 }
 
 /* 스크롤바 스타일링 */

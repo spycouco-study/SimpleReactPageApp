@@ -6,6 +6,7 @@ function ChatBot({ onMarkdownUpdate }) {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const [answers, setAnswers] = useState({});
+    const [openRequestInputs, setOpenRequestInputs] = useState(new Set());
     const messagesEndRef = useRef(null);
 
     const scrollToBottom = () => {
@@ -165,13 +166,19 @@ function ChatBot({ onMarkdownUpdate }) {
                             // 새로운 봇 메시지 그룹 시작
                             result.push({
                                 isGroup: true,
-                                messages: [message]
+                                messages: [message],
+                                isLastGroup: index === messages.length - 1 || 
+                                           messages[index + 1]?.sender === 'user' ||
+                                           messages[index + 1]?.text === '응답을 생성하는 중입니다...'
                             });
                         } else {
                             // 기존 봇 메시지 그룹에 추가
                             const lastItem = result[result.length - 1];
                             if (lastItem.isGroup) {
                                 lastItem.messages.push(message);
+                                lastItem.isLastGroup = index === messages.length - 1 || 
+                                                     messages[index + 1]?.sender === 'user' ||
+                                                     messages[index + 1]?.text === '응답을 생성하는 중입니다...';
                             }
                         }
                     }
@@ -214,6 +221,69 @@ function ChatBot({ onMarkdownUpdate }) {
                                         );
                                     }
                                 })}
+                                {item.isLastGroup && (
+                                    <div className="additional-request">
+                                        {Array.from(openRequestInputs).map((requestId, requestIndex) => (
+                                            <div key={requestId} className="message bot with-input">
+                                                <button 
+                                                    className="delete-request"
+                                                    onClick={() => {
+                                                        setOpenRequestInputs(prev => {
+                                                            const newSet = new Set(prev);
+                                                            newSet.delete(requestId);
+                                                            return newSet;
+                                                        });
+                                                    }}
+                                                >
+                                                    ×
+                                                </button>
+                                                <input
+                                                    autoFocus
+                                                    type="text"
+                                                    className="answer-input"
+                                                    placeholder="추가 요청을 입력하세요..."
+                                                    onKeyPress={(e) => {
+                                                        if (e.key === 'Enter' && e.target.value.trim()) {
+                                                            handleSubmit({
+                                                                preventDefault: () => {},
+                                                                target: { value: e.target.value }
+                                                            });
+                                                            setOpenRequestInputs(prev => {
+                                                                const newSet = new Set(prev);
+                                                                newSet.delete(requestId);
+                                                                return newSet;
+                                                            });
+                                                        }
+                                                    }}
+                                                    // 빈 값에 대한 onBlur 처리 제거
+                                                />
+                                            </div>
+                                        ))}
+                                        <div 
+                                            className="message bot clickable-message"
+                                            onClick={() => {
+                                                setOpenRequestInputs(prev => {
+                                                    const newSet = new Set(prev);
+                                                    newSet.add(`request-${Date.now()}`);
+                                                    return newSet;
+                                                });
+                                            }}
+                                        >
+                                            요청 추가하기
+                                        </div>
+                                        <div className="submit-group">
+                                            <button 
+                                                className="submit-button"
+                                                onClick={() => {
+                                                    // TODO: 여기에 제출 로직 추가
+                                                    console.log('제출되었습니다');
+                                                }}
+                                            >
+                                                제출
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         );
                     }
