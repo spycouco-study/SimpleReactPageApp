@@ -8,6 +8,7 @@ function ChatBot({ onMarkdownUpdate }) {
     const [answers, setAnswers] = useState({});
     const [openRequestInputs, setOpenRequestInputs] = useState(new Set());
     const [additionalAnswers, setAdditionalAnswers] = useState({});
+    const [submittedGroups, setSubmittedGroups] = useState(new Set());
     const messagesEndRef = useRef(null);
 
     const hasUnansweredQuestions = () => {
@@ -227,6 +228,7 @@ function ChatBot({ onMarkdownUpdate }) {
                                                         className="answer-input"
                                                         placeholder="답변을 입력하세요..."
                                                         value={answers[questionId] || ''}
+                                                        disabled={submittedGroups.has(`group-${index}`)}
                                                         onChange={(e) => setAnswers(prev => ({
                                                             ...prev,
                                                             [questionId]: e.target.value
@@ -246,28 +248,31 @@ function ChatBot({ onMarkdownUpdate }) {
                                     <div className="additional-request">
                                         {Array.from(openRequestInputs).map((requestId, requestIndex) => (
                                             <div key={requestId} className="message bot with-input">
-                                                <button 
-                                                    className="delete-request"
-                                                    onClick={() => {
-                                                        setOpenRequestInputs(prev => {
-                                                            const newSet = new Set(prev);
-                                                            newSet.delete(requestId);
-                                                            return newSet;
-                                                        });
-                                                        setAdditionalAnswers(prev => {
-                                                            const newAnswers = { ...prev };
-                                                            delete newAnswers[requestId];
-                                                            return newAnswers;
-                                                        });
-                                                    }}
-                                                >
-                                                    ×
-                                                </button>
+                                                {!submittedGroups.has(`group-${index}`) && (
+                                                    <button 
+                                                        className="delete-request"
+                                                        onClick={() => {
+                                                            setOpenRequestInputs(prev => {
+                                                                const newSet = new Set(prev);
+                                                                newSet.delete(requestId);
+                                                                return newSet;
+                                                            });
+                                                            setAdditionalAnswers(prev => {
+                                                                const newAnswers = { ...prev };
+                                                                delete newAnswers[requestId];
+                                                                return newAnswers;
+                                                            });
+                                                        }}
+                                                    >
+                                                        ×
+                                                    </button>
+                                                )}
                                                 <input
                                                     autoFocus
                                                     type="text"
                                                     className="answer-input"
                                                     value={additionalAnswers[requestId] || ''}
+                                                    disabled={submittedGroups.has(`group-${index}`)}
                                                     placeholder="추가 요청을 입력하세요..."
                                                     onChange={(e) => {
                                                         setAdditionalAnswers(prev => ({
@@ -322,20 +327,77 @@ function ChatBot({ onMarkdownUpdate }) {
                                                         !additionalAnswers[requestId]?.trim()
                                                     )
                                                 }
-                                                onClick={() => {
-                                                    // 기존 답변들 수집
-                                                    const mainAnswers = item.messages.reduce((acc, msg, msgIndex) => {
-                                                        if (msg.type !== 'comment') {
-                                                            acc[`q-${index}-${msgIndex}`] = answers[`q-${index}-${msgIndex}`];
-                                                        }
-                                                        return acc;
-                                                    }, {});
+                                                onClick={async () => {
+                                                    // 질문-답변 쌍 수집
+                                                    const questionAnswerPairs = item.messages
+                                                        .filter(msg => msg.type !== 'comment')
+                                                        .map((msg, msgIndex) => ({
+                                                            question: msg.text,
+                                                            answer: answers[`q-${index}-${msgIndex}`]
+                                                        }));
                                                     
-                                                    // 추가 요청 답변들은 이미 additionalAnswers에 있음
-                                                    console.log('제출된 답변들:', {
-                                                        mainAnswers,
-                                                        additionalAnswers
+                                                    // 추가 요청과 답변 수집
+                                                    const additionalRequests = Array.from(openRequestInputs)
+                                                        .map(requestId => ({
+                                                            request: additionalAnswers[requestId]
+                                                        }));
+
+                                                    // 서버로 전송할 데이터 구성
+                                                    // JSON 데이터를 문자열로 변환
+                                                    const submitData = JSON.stringify({
+                                                        mainQuestions: questionAnswerPairs,
+                                                        additionalRequests: additionalRequests
                                                     });
+
+                                                    try {
+                                                        const response = await axios.post('/test', submitData, {
+                                                            headers: {
+                                                                'Content-Type': 'text/plain'
+                                                            }
+                                                        });
+                                                        
+                                                        // 전송한 데이터와 받은 응답을 상세히 출력
+                                                        console.group('서버 통신 상세 정보');
+                                                        console.log('전송한 데이터:', JSON.parse(submitData));
+                                                        console.log('서버 응답 전체:', response);
+                                                        console.log('서버 응답 데이터:', response.data);
+                                                        console.log('서버 응답 상태:', response.status);
+                                                        console.groupEnd();
+                                                        
+                                                        if (response.data.status === 'success') {
+                                                            // 성공 메시지 추가
+                                                            setMessages(prev => [...prev, {
+                                                                text: response.data.message || '답변이 성공적으로 제출되었습니다.',
+                                                                sender: 'bot',
+                                                                type: 'comment'
+                                                            }]);
+
+                                                            // 현재 그룹을 제출 완료 상태로 표시
+                                                            setSubmittedGroups(prev => {
+                                                                const newSet = new Set(prev);
+                                                                newSet.add(`group-${index}`);
+                                                                return newSet;
+                                                            });
+                                                        } else {
+                                                            // 서버에서 오류 응답을 보낸 경우
+                                                            throw new Error(response.data.message || '서버 처리 중 오류가 발생했습니다.');
+                                                        }
+                                                    } catch (error) {
+                                                        console.group('서버 통신 오류');
+                                                        console.error('오류 객체:', error);
+                                                        console.error('오류 메시지:', error.message);
+                                                        if (error.response) {
+                                                            console.error('서버 응답 상태:', error.response.status);
+                                                            console.error('서버 응답 데이터:', error.response.data);
+                                                        }
+                                                        console.groupEnd();
+                                                        // 에러 메시지 추가
+                                                        setMessages(prev => [...prev, {
+                                                            text: '답변 제출 중 오류가 발생했습니다. 다시 시도해 주세요.',
+                                                            sender: 'bot',
+                                                            type: 'comment'
+                                                        }]);
+                                                    }
                                                     // TODO: 여기에 서버 제출 로직 추가
                                                 }}
                                             >
