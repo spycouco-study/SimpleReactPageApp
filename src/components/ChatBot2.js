@@ -383,10 +383,7 @@ function ChatBot({ onMarkdownUpdate }) {
                                                                 newSet.add(`group-${index}`);
                                                                 return newSet;
                                                             });
-
-                                                             // 추가 요청 입력 상태 정리 (해당 그룹 제출 후 잔여 입력 제거)
-                                                             setOpenRequestInputs(new Set());
-                                                             setAdditionalAnswers({});
+                                                            // 제출 후에도 추가 요청 풍선을 유지하되, 제출된 그룹에서는 입력/삭제가 비활성화됨
                                                         } else {
                                                             // 서버에서 오류 응답을 보낸 경우
                                                             throw new Error(response.data.message || '서버 처리 중 오류가 발생했습니다.');
