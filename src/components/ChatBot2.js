@@ -330,13 +330,16 @@ function ChatBot({ onMarkdownUpdate }) {
                                                         )
                                                     }
                                                     onClick={async () => {
-                                                    // 질문-답변 쌍 수집
-                                                    const questionAnswerPairs = item.messages
-                                                        .filter(msg => msg.type !== 'comment')
-                                                        .map((msg, msgIndex) => ({
-                                                            question: msg.text,
-                                                            answer: answers[`q-${index}-${msgIndex}`]
-                                                        }));
+                                                    // 질문-답변 쌍 수집 (원본 messageIndex 유지하여 인덱스 밀림 방지)
+                                                    const questionAnswerPairs = item.messages.reduce((acc, msg, msgIndex) => {
+                                                        if (msg.type !== 'comment') {
+                                                            acc.push({
+                                                                question: msg.text,
+                                                                answer: answers[`q-${index}-${msgIndex}`]
+                                                            });
+                                                        }
+                                                        return acc;
+                                                    }, []);
                                                     
                                                     // 추가 요청과 답변 수집
                                                     const additionalRequests = Array.from(openRequestInputs)
