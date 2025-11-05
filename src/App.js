@@ -7,7 +7,8 @@ import BoundingBoxEditor from './components/BoundingBoxEditor';
 
 function App() {
   const [markdownContent, setMarkdownContent] = useState('# Alparka 놀이공원 기획서\n\n[기획서 내용]');
-  const [activeTab, setActiveTab] = useState('markdown'); // 'markdown' or 'boundingBox'
+  const [activeTab, setActiveTab] = useState('markdown'); // 'markdown', 'boundingBox', or 'chat'
+  const [activeChatTab, setActiveChatTab] = useState('chatbot1'); // 'chatbot1' or 'chatbot2'
   const [isEditing, setIsEditing] = useState(true);
 
   const handleMarkdownUpdate = (content) => {
@@ -55,7 +56,27 @@ function App() {
       <main className="split-layout">
         {/* 챗봇 섹션 */}
         <div className="chat-section">
-          <ChatBot onMarkdownUpdate={handleMarkdownUpdate} />
+          <div className="chat-tabs">
+            <button
+              className={`chat-tab ${activeChatTab === 'chatbot1' ? 'active' : ''}`}
+              onClick={() => setActiveChatTab('chatbot1')}
+            >
+              코드 수정
+            </button>
+            <button
+              className={`chat-tab ${activeChatTab === 'chatbot2' ? 'active' : ''}`}
+              onClick={() => setActiveChatTab('chatbot2')}
+            >
+              기획 QnA
+            </button>
+          </div>
+          <div className="chat-content">
+            {activeChatTab === 'chatbot1' ? (
+              <ChatBot onMarkdownUpdate={handleMarkdownUpdate} />
+            ) : (
+              <ChatBot2 onMarkdownUpdate={handleMarkdownUpdate} />
+            )}
+          </div>
         </div>
         
         {/* 콘텐츠 섹션 */}
@@ -73,12 +94,6 @@ function App() {
               className={`tab-button ${activeTab === 'boundingBox' ? 'active' : ''}`}
             >
               바운딩 박스
-            </button>
-            <button 
-              onClick={() => setActiveTab('chatbot2')}
-              className={`tab-button ${activeTab === 'chatbot2' ? 'active' : ''}`}
-            >
-              챗봇 2
             </button>
           </div>
 
@@ -99,13 +114,6 @@ function App() {
           {activeTab === 'boundingBox' && (
             <div className="bounding-box-section">
               <BoundingBoxEditor />
-            </div>
-          )}
-
-          {/* 챗봇 2 탭 */}
-          {activeTab === 'chatbot2' && (
-            <div className="chatbot2-section">
-              <ChatBot2 onMarkdownUpdate={handleMarkdownUpdate} />
             </div>
           )}
         </div>

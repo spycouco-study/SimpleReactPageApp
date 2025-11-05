@@ -187,3 +187,39 @@ main {
 .markdown-viewer p {
     margin-bottom: 15px;
 }
+
+/* 챗봇 탭 스타일링 */
+.chat-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 0 10px;
+}
+
+.chat-tab {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    background-color: #f0f2f5;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.chat-tab:hover {
+    background-color: #e4e6e9;
+}
+
+.chat-tab.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.chat-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
