@@ -69,24 +69,33 @@ function ChatBot({ onMarkdownUpdate }) {
             // 임시 메시지 제거
             setMessages(prev => prev.filter(msg => msg.id !== tempBotMessage.id));
             
-            // 코멘트가 있다면 추가
-            if (responseData.comment) {
-                setMessages(prev => [...prev, {
-                    text: responseData.comment,
-                    sender: 'bot'
-                }]);
-            }
-            
-            // 질문들 추가
-            if (responseData.questions && Array.isArray(responseData.questions)) {
-                responseData.questions.forEach(question => {
-                    if (question) {  // 빈 문자열이 아닌 경우만 추가
-                        setMessages(prev => [...prev, {
-                            text: question,
-                            sender: 'bot'
-                        }]);
-                    }
-                });
+            // 코멘트와 질문들을 함께 그룹으로 추가
+            if (responseData.comment || (responseData.questions && responseData.questions.length > 0)) {
+                let newMessages = [];
+                
+                // 코멘트가 있다면 추가
+                if (responseData.comment) {
+                    newMessages.push({
+                        text: responseData.comment,
+                        sender: 'bot',
+                        type: 'comment'
+                    });
+                }
+                
+                // 질문들 추가
+                if (responseData.questions && Array.isArray(responseData.questions)) {
+                    responseData.questions.forEach(question => {
+                        if (question) {  // 빈 문자열이 아닌 경우만 추가
+                            newMessages.push({
+                                text: question,
+                                sender: 'bot',
+                                type: 'question'
+                            });
+                        }
+                    });
+                }
+
+                setMessages(prev => [...prev, ...newMessages]);
             }
         } catch (error) {
             console.error('Error:', error);
@@ -108,11 +117,57 @@ function ChatBot({ onMarkdownUpdate }) {
                 </button>
             </div>
             <div className="chat-messages">
-                {messages.map((message, index) => (
-                    <div key={message.id || index} className={`message ${message.sender}`}>
-                        {message.text}
-                    </div>
-                ))}
+                {messages.reduce((result, message, index) => {
+                    if (message.sender === 'user') {
+                        // 사용자 메시지는 개별적으로 처리
+                        result.push(
+                            <div key={message.id || index} className={`message ${message.sender}`}>
+                                {message.text}
+                            </div>
+                        );
+                    } else {
+                        // 봇 메시지는 그룹화
+                        if (index === 0 || messages[index - 1].sender !== 'bot') {
+                            // 새로운 봇 메시지 그룹 시작
+                            result.push({
+                                isGroup: true,
+                                messages: [message]
+                            });
+                        } else {
+                            // 기존 봇 메시지 그룹에 추가
+                            const lastItem = result[result.length - 1];
+                            if (lastItem.isGroup) {
+                                lastItem.messages.push(message);
+                            }
+                        }
+                    }
+                    return result;
+                }, []).map((item, index) => {
+                    if (item.isGroup) {
+                        // 봇 메시지 그룹 렌더링
+                        return (
+                            <div key={`group-${index}`} className="message-group bot">
+                                {item.messages.map((message, messageIndex) => {
+                                    if (message.type === 'comment') {
+                                        return (
+                                            <div key={message.id || messageIndex} className="bot-comment">
+                                                {message.text}
+                                            </div>
+                                        );
+                                    } else {
+                                        return (
+                                            <div key={message.id || messageIndex} className="message bot">
+                                                {message.text}
+                                            </div>
+                                        );
+                                    }
+                                })}
+                            </div>
+                        );
+                    }
+                    // 개별 사용자 메시지 렌더링
+                    return item;
+                })}
                 <div ref={messagesEndRef} />
             </div>
             <form className="chat-input-form" onSubmit={handleSubmit}>

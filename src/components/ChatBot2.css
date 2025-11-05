@@ -41,23 +41,56 @@
     min-height: 0;
 }
 
-.message {
+.message-group {
     margin: 10px;
-    padding: 10px 15px;
-    border-radius: 15px;
-    max-width: 70%;
+    padding: 10px;
+    border-radius: 20px;
+    max-width: 80%;
+}
+
+.message-group.user {
+    background-color: rgba(0, 123, 255, 0.1);
+    margin-left: auto;
+}
+
+.message-group.bot {
+    background-color: rgba(200, 200, 200, 0.5);
+    margin-right: auto;
+}
+
+.message {
+    margin: 3px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    max-width: 100%;
+}
+
+.message-group .message {
+    max-width: 95%;
+}
+
+.bot-comment {
+    margin: 0 0 10px 0;
+    padding: 0 5px;
+    color: #555;
+    font-size: 0.95em;
+    line-height: 1.4;
 }
 
 .message.user {
     background-color: #007bff;
     color: white;
-    margin-left: auto;
+    margin-left: 50px;
+    margin-right: 5px;
+    border-top-right-radius: 4px;
 }
 
 .message.bot {
     background-color: #e9ecef;
     color: black;
     margin-right: auto;
+    margin-left: 5px;
+    border-top-left-radius: 4px;
 }
 
 .chat-input-form {
