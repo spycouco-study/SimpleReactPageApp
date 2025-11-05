@@ -434,7 +434,7 @@ const BoundingBoxEditor = () => {
                 setCurrentFrame(prev => (prev + 1) % boxes.length);
             };
             
-            const intervalId = setInterval(animate, 500);
+            const intervalId = setInterval(animate, 200); // 5 FPS (1000ms / 5 = 200ms)
             return () => clearInterval(intervalId);
         }
     }, [isPlaying, boxes.length]);
