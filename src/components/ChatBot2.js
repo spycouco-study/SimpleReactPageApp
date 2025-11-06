@@ -40,6 +40,39 @@ function ChatBot({ onMarkdownUpdate }) {
         scrollToBottom();
     }, [messages]);
 
+    // 서버의 reply(JSON 문자열 또는 객체)를 봇 메시지 배열로 변환
+    const buildMessagesFromReply = (reply) => {
+        try {
+            const responseData = typeof reply === 'string' ? JSON.parse(reply) : reply;
+            const newMessages = [];
+
+            if (responseData?.comment) {
+                newMessages.push({
+                    text: responseData.comment,
+                    sender: 'bot',
+                    type: 'comment'
+                });
+            }
+
+            if (Array.isArray(responseData?.questions)) {
+                responseData.questions.forEach((question) => {
+                    if (question) {
+                        newMessages.push({
+                            text: question,
+                            sender: 'bot',
+                            type: 'question'
+                        });
+                    }
+                });
+            }
+
+            return newMessages;
+        } catch (err) {
+            console.error('응답 파싱 오류:', err, reply);
+            return [];
+        }
+    };
+
     const handleAnswerSubmit = async (questionId, answer) => {
         try {
             // 답변을 서버로 전송
@@ -115,39 +148,17 @@ function ChatBot({ onMarkdownUpdate }) {
             });
 
             // 서버 응답을 파싱하여 여러 메시지로 분리
-            const responseData = JSON.parse(response.data.reply);
+            const newMessages = buildMessagesFromReply(response.data.reply);
             
             // 임시 메시지 제거
             setMessages(prev => prev.filter(msg => msg.id !== tempBotMessage.id));
             
             // 코멘트와 질문들을 함께 그룹으로 추가
-            if (responseData.comment || (responseData.questions && responseData.questions.length > 0)) {
-                let newMessages = [];
-                
-                // 코멘트가 있다면 추가
-                if (responseData.comment) {
-                    newMessages.push({
-                        text: responseData.comment,
-                        sender: 'bot',
-                        type: 'comment'
-                    });
-                }
-                
-                // 질문들 추가
-                if (responseData.questions && Array.isArray(responseData.questions)) {
-                    responseData.questions.forEach(question => {
-                        if (question) {  // 빈 문자열이 아닌 경우만 추가
-                            newMessages.push({
-                                text: question,
-                                sender: 'bot',
-                                type: 'question'
-                            });
-                        }
-                    });
-                }
 
-                setMessages(prev => [...prev, ...newMessages]);
-            }
+            setMessages(prev => {
+                const withoutTemp = prev.filter(msg => msg.id !== tempBotMessage.id);
+                return newMessages.length ? [...withoutTemp, ...newMessages] : withoutTemp;
+            });
         } catch (error) {
             console.error('Error:', error);
             // 에러 메시지 표시
@@ -397,6 +408,13 @@ function ChatBot({ onMarkdownUpdate }) {
                                                                 newSet.add(`group-${index}`);
                                                                 return newSet;
                                                             });
+                                                            // 제출 결과에 후속 질문/코멘트가 있다면 동일 포맷으로 렌더링
+                                                            if (response.data.reply) {
+                                                                const followUps = buildMessagesFromReply(response.data.reply);
+                                                                if (followUps.length) {
+                                                                    setMessages(prev => [...prev, ...followUps]);
+                                                                }
+                                                            }
                                                             // 제출 후에도 추가 요청 풍선을 유지하되, 제출된 그룹에서는 입력/삭제가 비활성화됨
                                                         } else {
                                                             // 서버에서 오류 응답을 보낸 경우
