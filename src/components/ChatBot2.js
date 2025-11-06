@@ -10,6 +10,7 @@ function ChatBot({ onMarkdownUpdate }) {
     const [additionalAnswers, setAdditionalAnswers] = useState({});
     const [submittedGroups, setSubmittedGroups] = useState(new Set());
     const [pendingGroups, setPendingGroups] = useState(new Set());
+    const [openRequestGroup, setOpenRequestGroup] = useState(null);
     const messagesEndRef = useRef(null);
 
     const hasUnansweredQuestions = () => {
@@ -211,7 +212,8 @@ function ChatBot({ onMarkdownUpdate }) {
                                 messages: [message],
                                 isLastGroup: index === messages.length - 1 || 
                                            messages[index + 1]?.sender === 'user' ||
-                                           messages[index + 1]?.text === '응답을 생성하는 중입니다...'
+                                           messages[index + 1]?.text === '응답을 생성하는 중입니다...' ||
+                                           messages[index + 1]?.type === 'separator'
                             });
                         } else {
                             // 기존 봇 메시지 그룹에 추가
@@ -220,7 +222,8 @@ function ChatBot({ onMarkdownUpdate }) {
                                 lastItem.messages.push(message);
                                 lastItem.isLastGroup = index === messages.length - 1 || 
                                                      messages[index + 1]?.sender === 'user' ||
-                                                     messages[index + 1]?.text === '응답을 생성하는 중입니다...';
+                                                     messages[index + 1]?.text === '응답을 생성하는 중입니다...' ||
+                                                     messages[index + 1]?.type === 'separator';
                             }
                         }
                     }
@@ -231,6 +234,9 @@ function ChatBot({ onMarkdownUpdate }) {
                         const groupKey = `group-${index}`;
                         const isSubmitted = submittedGroups.has(groupKey);
                         const isPending = pendingGroups.has(groupKey);
+                        const groupRequests = Array.from(openRequestInputs).filter((id) =>
+                            id.startsWith(`${groupKey}|`) || (!id.includes('|') && openRequestGroup === groupKey)
+                        );
                         return (
                             <div key={`group-${index}`} className="message-group bot">
                                 {item.messages.map((message, messageIndex) => {
@@ -267,9 +273,9 @@ function ChatBot({ onMarkdownUpdate }) {
                                         );
                                     }
                                 })}
-                                {item.isLastGroup && (
+                {item.isLastGroup && (
                                     <div className="additional-request">
-                                        {Array.from(openRequestInputs).map((requestId, requestIndex) => (
+                    {groupRequests.map((requestId, requestIndex) => (
                                             <div key={requestId} className="message bot with-input">
                                                 {!isSubmitted && (
                                                     <button 
@@ -333,9 +339,10 @@ function ChatBot({ onMarkdownUpdate }) {
                                                 style={isPending ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
                                                 onClick={() => {
                                                     if (isPending) return;
+                                                    setOpenRequestGroup(groupKey);
                                                     setOpenRequestInputs(prev => {
                                                         const newSet = new Set(prev);
-                                                        newSet.add(`request-${Date.now()}`);
+                                                        newSet.add(`${groupKey}|request-${Date.now()}`);
                                                         return newSet;
                                                     });
                                                 }}
@@ -352,7 +359,7 @@ function ChatBot({ onMarkdownUpdate }) {
                                                             answers[`q-${index}-${msgIndex}`]?.trim()
                                                         ) ||
                                                         // 추가 요청 입력창이 있고 답변이 비어있는 경우 체크
-                                                        Array.from(openRequestInputs).some(requestId => 
+                                                        groupRequests.some(requestId => 
                                                             !additionalAnswers[requestId]?.trim()
                                                         ) || isPending
                                                     }
@@ -375,7 +382,7 @@ function ChatBot({ onMarkdownUpdate }) {
                                                     }, []);
                                                     
                                                     // 추가 요청과 답변 수집
-                                                    const additionalRequests = Array.from(openRequestInputs)
+                                                    const additionalRequests = groupRequests
                                                         .map(requestId => ({
                                                             request: additionalAnswers[requestId]
                                                         }));
