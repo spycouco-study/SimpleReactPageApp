@@ -9,6 +9,7 @@ function ChatBot({ onMarkdownUpdate }) {
     const [openRequestInputs, setOpenRequestInputs] = useState(new Set());
     const [additionalAnswers, setAdditionalAnswers] = useState({});
     const [submittedGroups, setSubmittedGroups] = useState(new Set());
+    const [pendingGroups, setPendingGroups] = useState(new Set());
     const messagesEndRef = useRef(null);
 
     const hasUnansweredQuestions = () => {
@@ -208,6 +209,9 @@ function ChatBot({ onMarkdownUpdate }) {
                 }, []).map((item, index) => {
                     if (item.isGroup) {
                         // 봇 메시지 그룹 렌더링
+                        const groupKey = `group-${index}`;
+                        const isSubmitted = submittedGroups.has(groupKey);
+                        const isPending = pendingGroups.has(groupKey);
                         return (
                             <div key={`group-${index}`} className="message-group bot">
                                 {item.messages.map((message, messageIndex) => {
@@ -228,7 +232,7 @@ function ChatBot({ onMarkdownUpdate }) {
                                                         className="answer-input"
                                                         placeholder="답변을 입력하세요..."
                                                         value={answers[questionId] || ''}
-                                                        disabled={submittedGroups.has(`group-${index}`)}
+                                                        disabled={isSubmitted || isPending}
                                                         onChange={(e) => setAnswers(prev => ({
                                                             ...prev,
                                                             [questionId]: e.target.value
@@ -248,10 +252,12 @@ function ChatBot({ onMarkdownUpdate }) {
                                     <div className="additional-request">
                                         {Array.from(openRequestInputs).map((requestId, requestIndex) => (
                                             <div key={requestId} className="message bot with-input">
-                                                {!submittedGroups.has(`group-${index}`) && (
+                                                {!isSubmitted && (
                                                     <button 
                                                         className="delete-request"
+                                                        disabled={isPending}
                                                         onClick={() => {
+                                                            if (isPending) return;
                                                             setOpenRequestInputs(prev => {
                                                                 const newSet = new Set(prev);
                                                                 newSet.delete(requestId);
@@ -272,7 +278,7 @@ function ChatBot({ onMarkdownUpdate }) {
                                                     type="text"
                                                     className="answer-input"
                                                     value={additionalAnswers[requestId] || ''}
-                                                    disabled={submittedGroups.has(`group-${index}`)}
+                                                    disabled={isSubmitted || isPending}
                                                     placeholder="추가 요청을 입력하세요..."
                                                     onChange={(e) => {
                                                         setAdditionalAnswers(prev => ({
@@ -301,11 +307,13 @@ function ChatBot({ onMarkdownUpdate }) {
                                                 />
                                             </div>
                                         ))}
-                                        {!submittedGroups.has(`group-${index}`) && (
+                                        {!isSubmitted && (
                                             <>
                                             <div 
                                                 className="message bot clickable-message"
+                                                style={isPending ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
                                                 onClick={() => {
+                                                    if (isPending) return;
                                                     setOpenRequestInputs(prev => {
                                                         const newSet = new Set(prev);
                                                         newSet.add(`request-${Date.now()}`);
@@ -327,9 +335,15 @@ function ChatBot({ onMarkdownUpdate }) {
                                                         // 추가 요청 입력창이 있고 답변이 비어있는 경우 체크
                                                         Array.from(openRequestInputs).some(requestId => 
                                                             !additionalAnswers[requestId]?.trim()
-                                                        )
+                                                        ) || isPending
                                                     }
                                                     onClick={async () => {
+                                                        // 그룹을 pending 상태로 설정하여 중복 전송 방지
+                                                        setPendingGroups(prev => {
+                                                            const s = new Set(prev);
+                                                            s.add(groupKey);
+                                                            return s;
+                                                        });
                                                     // 질문-답변 쌍 수집 (원본 messageIndex 유지하여 인덱스 밀림 방지)
                                                     const questionAnswerPairs = item.messages.reduce((acc, msg, msgIndex) => {
                                                         if (msg.type !== 'comment') {
@@ -403,6 +417,13 @@ function ChatBot({ onMarkdownUpdate }) {
                                                             sender: 'bot',
                                                             type: 'comment'
                                                         }]);
+                                                    } finally {
+                                                        // 성공/실패와 관계없이 pending 해제
+                                                        setPendingGroups(prev => {
+                                                            const s = new Set(prev);
+                                                            s.delete(groupKey);
+                                                            return s;
+                                                        });
                                                     }
                                                     // TODO: 여기에 서버 제출 로직 추가
                                                 }}
