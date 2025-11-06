@@ -153,11 +153,15 @@ function ChatBot({ onMarkdownUpdate }) {
             // 임시 메시지 제거
             setMessages(prev => prev.filter(msg => msg.id !== tempBotMessage.id));
             
-            // 코멘트와 질문들을 함께 그룹으로 추가
-
+            // 코멘트와 질문들을 함께 그룹으로 추가 (새 그룹 강제 분리)
             setMessages(prev => {
                 const withoutTemp = prev.filter(msg => msg.id !== tempBotMessage.id);
-                return newMessages.length ? [...withoutTemp, ...newMessages] : withoutTemp;
+                if (!newMessages.length) return withoutTemp;
+                return [
+                    ...withoutTemp,
+                    { type: 'separator', sender: 'system' },
+                    ...newMessages,
+                ];
             });
         } catch (error) {
             console.error('Error:', error);
@@ -180,6 +184,10 @@ function ChatBot({ onMarkdownUpdate }) {
             </div>
             <div className="chat-messages">
                 {messages.reduce((result, message, index) => {
+                    // 그룹 분리를 위한 메타 메시지는 렌더링하지 않음
+                    if (message.type === 'separator') {
+                        return result;
+                    }
                     if (message.sender === 'user') {
                         // 사용자 메시지는 개별적으로 처리
                         result.push(
@@ -412,7 +420,11 @@ function ChatBot({ onMarkdownUpdate }) {
                                                             if (response.data.reply) {
                                                                 const followUps = buildMessagesFromReply(response.data.reply);
                                                                 if (followUps.length) {
-                                                                    setMessages(prev => [...prev, ...followUps]);
+                                                                    setMessages(prev => [
+                                                                        ...prev,
+                                                                        { type: 'separator', sender: 'system' },
+                                                                        ...followUps
+                                                                    ]);
                                                                 }
                                                             }
                                                             // 제출 후에도 추가 요청 풍선을 유지하되, 제출된 그룹에서는 입력/삭제가 비활성화됨
