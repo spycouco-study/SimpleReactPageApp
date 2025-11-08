@@ -9,7 +9,7 @@ function App() {
   const [markdownContent, setMarkdownContent] = useState('# Alparka 놀이공원 기획서\n\n[기획서 내용]');
   const [activeTab, setActiveTab] = useState('markdown'); // 'markdown', 'boundingBox', or 'chat'
   const [activeChatTab, setActiveChatTab] = useState('chatbot1'); // 'chatbot1' or 'chatbot2'
-  const [isEditing, setIsEditing] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleMarkdownUpdate = (content) => {
     setMarkdownContent(content);
