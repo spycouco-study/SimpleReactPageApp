@@ -434,6 +434,34 @@ function ChatBot({ onMarkdownUpdate }) {
                                                                     ]);
                                                                 }
                                                             }
+
+                                                            // 제출 성공 후 갱신된 사양서 가져오기
+                                                            try {
+                                                                const specRes = await axios.get('/spec');
+                                                                if (specRes?.data) {
+                                                                    if (typeof onMarkdownUpdate === 'function') {
+                                                                        onMarkdownUpdate(specRes.data);
+                                                                    }
+                                                                    setMessages(prev => [...prev, {
+                                                                        text: '갱신된 사양서를 불러왔습니다.',
+                                                                        sender: 'bot',
+                                                                        type: 'comment'
+                                                                    }]);
+                                                                }
+                                                            } catch (specError) {
+                                                                console.group('사양서 갱신 오류');
+                                                                console.error('오류 객체:', specError);
+                                                                if (specError.response) {
+                                                                    console.error('서버 응답 상태:', specError.response.status);
+                                                                    console.error('서버 응답 데이터:', specError.response.data);
+                                                                }
+                                                                console.groupEnd();
+                                                                setMessages(prev => [...prev, {
+                                                                    text: '사양서를 불러오는 중 오류가 발생했습니다.',
+                                                                    sender: 'bot',
+                                                                    type: 'comment'
+                                                                }]);
+                                                            }
                                                             // 제출 후에도 추가 요청 풍선을 유지하되, 제출된 그룹에서는 입력/삭제가 비활성화됨
                                                         } else {
                                                             // 서버에서 오류 응답을 보낸 경우
