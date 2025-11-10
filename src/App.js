@@ -4,10 +4,11 @@ import ChatBot from './components/ChatBot';
 import ChatBot2 from './components/ChatBot2';
 import ReactMarkdown from 'react-markdown';
 import BoundingBoxEditor from './components/BoundingBoxEditor';
+import DataEditor from './components/DataEditor';
 
 function App() {
   const [markdownContent, setMarkdownContent] = useState('# Alparka 놀이공원 기획서\n\n[기획서 내용]');
-  const [activeTab, setActiveTab] = useState('markdown'); // 'markdown', 'boundingBox', or 'chat'
+  const [activeTab, setActiveTab] = useState('markdown'); // 'markdown', 'boundingBox', 'data'
   const [activeChatTab, setActiveChatTab] = useState('chatbot1'); // 'chatbot1' or 'chatbot2'
   const [isEditing, setIsEditing] = useState(false);
 
@@ -95,6 +96,12 @@ function App() {
             >
               바운딩 박스
             </button>
+            <button 
+              onClick={() => setActiveTab('data')}
+              className={`tab-button ${activeTab === 'data' ? 'active' : ''}`}
+            >
+              데이터
+            </button>
           </div>
 
           {/* 마크다운 탭 */}
@@ -114,6 +121,13 @@ function App() {
           {activeTab === 'boundingBox' && (
             <div className="bounding-box-section">
               <BoundingBoxEditor />
+            </div>
+          )}
+
+          {/* 데이터 탭 */}
+          {activeTab === 'data' && (
+            <div className="data-section">
+              <DataEditor />
             </div>
           )}
         </div>
