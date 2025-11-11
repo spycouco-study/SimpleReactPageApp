@@ -141,6 +141,21 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
     reader.readAsText(file);
   };
 
+  const handleExport = () => {
+    try {
+      const payload = JSON.stringify({ versions }, null, 2);
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'snapshots.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('내보내기 실패: ' + err.message);
+    }
+  };
+
   if (!nodes.length) {
     return (
       <div className="snapshot-tree graph">
@@ -160,6 +175,7 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
     <div className="snapshot-tree graph">
       <div className="st-toolbar">
         <button onClick={() => fileRef.current?.click()}>JSON 불러오기</button>
+        <button onClick={handleExport}>JSON 내보내기</button>
         <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleFile} />
         {customData && (
           <button onClick={() => { setCustomData(null); setVersions(data?.versions || []); setSelected(null); }}>기본 데이터로 복원</button>
