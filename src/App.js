@@ -5,10 +5,11 @@ import ChatBot2 from './components/ChatBot2';
 import ReactMarkdown from 'react-markdown';
 import BoundingBoxEditor from './components/BoundingBoxEditor';
 import DataEditor from './components/DataEditor';
+import SnapshotTree from './components/SnapshotTree';
 
 function App() {
   const [markdownContent, setMarkdownContent] = useState('# Alparka 놀이공원 기획서\n\n[기획서 내용]');
-  const [activeTab, setActiveTab] = useState('markdown'); // 'markdown', 'boundingBox', 'data'
+  const [activeTab, setActiveTab] = useState('markdown'); // 'markdown', 'boundingBox', 'data', 'snapshots'
   const [activeChatTab, setActiveChatTab] = useState('chatbot1'); // 'chatbot1' or 'chatbot2'
   const [isEditing, setIsEditing] = useState(false);
 
@@ -102,6 +103,12 @@ function App() {
             >
               데이터
             </button>
+            <button 
+              onClick={() => setActiveTab('snapshots')}
+              className={`tab-button ${activeTab === 'snapshots' ? 'active' : ''}`}
+            >
+              스냅샷
+            </button>
           </div>
 
           {/* 마크다운 탭 */}
@@ -128,6 +135,14 @@ function App() {
           {activeTab === 'data' && (
             <div className="data-section">
               <DataEditor />
+            </div>
+          )}
+
+          {/* 스냅샷 트리 탭 */}
+          {activeTab === 'snapshots' && (
+            <div className="snapshot-section" style={{ flex: 1 }}>
+              <h2>프로젝트 스냅샷 트리</h2>
+              <SnapshotTree />
             </div>
           )}
         </div>

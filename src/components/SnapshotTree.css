@@ -1,0 +1,137 @@
+.snapshot-tree {
+  text-align: left;
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  max-height: 100%;
+  overflow: auto;
+}
+
+/* 그래프 모드 */
+.snapshot-tree.graph {
+  height: 100%;
+  padding: 0;
+}
+
+svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.st-edge {
+  stroke: #c8d1dc;
+  stroke-width: 2;
+  fill: none;
+}
+
+.st-node {
+  fill: #ffffff;
+  stroke: #6b7a90;
+  stroke-width: 2;
+}
+
+.st-node.current {
+  fill: #e6f4ea;
+  stroke: #137333;
+}
+
+.st-node.latest:not(.current) {
+  fill: #e8f0fe;
+  stroke: #1967d2;
+}
+
+.st-label {
+  font: 600 13px/1.2 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  fill: #1f2937;
+}
+
+.st-sub {
+  font: 11px/1.2 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  fill: #6b7280;
+}
+
+.st-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+}
+
+.st-toolbar button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  background: #007bff;
+  color: #fff;
+  cursor: pointer;
+}
+
+.st-toolbar button:hover {
+  background: #0056b3;
+}
+
+.st-node {
+  margin: 2px 0;
+}
+
+.st-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.st-row:hover {
+  background: #f5f7fb;
+}
+
+.st-caret {
+  width: 16px;
+  color: #666;
+}
+
+.st-version {
+  font-weight: 600;
+  color: #333;
+}
+
+.st-timestamp {
+  font-size: 12px;
+  color: #777;
+}
+
+.st-summary {
+  margin-left: auto;
+  font-size: 12px;
+  color: #555;
+}
+
+.st-badge {
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.st-badge.current {
+  background: #e6f4ea;
+  color: #137333;
+}
+
+.st-badge.latest {
+  background: #e8f0fe;
+  color: #1967d2;
+}
+
+.st-children {
+  margin-left: 0;
+  border-left: 1px dashed #e0e3e7;
+}
+
+.st-empty {
+  padding: 12px;
+  color: #666;
+}
