@@ -109,8 +109,12 @@ function layoutTreeVertical(roots, hGap = 110, vGap = 110, margin = 50) {
 
 export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
   const [customData, setCustomData] = useState(null);
+  const [versions, setVersions] = useState(data?.versions || []);
+  const [selected, setSelected] = useState(null); // 선택된 버전 오브젝트
   const fileRef = useRef(null);
-  const effectiveData = customData || data;
+
+  // 외부 data 혹은 업로드 데이터 변화에 따라 versions 상태 갱신
+  const effectiveData = useMemo(() => (customData ? customData : { versions }), [customData, versions]);
 
   const roots = useMemo(() => buildTree(effectiveData?.versions || []), [effectiveData]);
   const { width, height, nodes, edges } = useMemo(() => layoutTreeVertical(roots), [roots]);
@@ -124,6 +128,7 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
         const json = JSON.parse(ev.target.result);
         if (json?.versions && Array.isArray(json.versions)) {
           setCustomData(json);
+          setVersions(json.versions);
         } else {
           alert('올바른 형식이 아닙니다. { versions: [...] } 필요');
         }
@@ -157,9 +162,10 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
         <button onClick={() => fileRef.current?.click()}>JSON 불러오기</button>
         <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleFile} />
         {customData && (
-          <button onClick={() => setCustomData(null)}>기본 데이터로 복원</button>
+          <button onClick={() => { setCustomData(null); setVersions(data?.versions || []); setSelected(null); }}>기본 데이터로 복원</button>
         )}
       </div>
+      <div className="st-graph-wrap">
       <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMinYMin meet">
         <g className="st-edges">
           {edges.map(([p, c], idx) => (
@@ -172,7 +178,7 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
         </g>
         <g className="st-nodes">
           {nodes.map((n) => (
-            <g key={n.version} className="st-node-g" transform={`translate(${n.x}, ${n.y})`}>
+            <g key={n.version} className="st-node-g" transform={`translate(${n.x}, ${n.y})`} onClick={() => setSelected(n)}>
               <circle r={20} className={`st-node ${n.is_current ? 'current' : n.is_latest ? 'latest' : ''}`} />
               <text className="st-label" x={26} y={2}>{n.version}</text>
               <text className="st-sub" x={26} y={18}>{(() => { try { const d = new Date(n.timestamp); return d.toLocaleString(); } catch { return n.timestamp; } })()}</text>
@@ -180,6 +186,45 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
           ))}
         </g>
       </svg>
+      </div>
+
+      {selected && (
+        <div className="st-detail">
+          <div className="st-detail-header">
+            <strong>{selected.version}</strong>
+            <button className="st-detail-close" onClick={() => setSelected(null)}>닫기</button>
+          </div>
+          <div className="st-detail-body">
+            <div><b>버전:</b> {selected.version}</div>
+            <div><b>부모:</b> {selected.parent ?? '(없음)'}</div>
+            <div><b>시간:</b> {(() => { try { const d = new Date(selected.timestamp); return d.toLocaleString(); } catch { return selected.timestamp; } })()}</div>
+            <div><b>요약:</b> {selected.summary || '(요약 없음)'}</div>
+            <div><b>현재 여부:</b> {selected.is_current ? 'true' : 'false'}</div>
+            <div style={{ marginTop: 12 }}>
+              <button
+                onClick={() => {
+                  // 선택된 버전만 is_current = true, 나머지는 false
+                  setVersions((prev) => prev.map((v) => ({
+                    ...v,
+                    is_current: v.version === selected.version,
+                  })));
+                  // customData가 있으면 동기화, 없으면 내부 versions 사용 중이므로 그대로
+                  if (customData) {
+                    setCustomData((prev) => ({ ...prev, versions: prev.versions.map((v) => ({
+                      ...v,
+                      is_current: v.version === selected.version,
+                    })) }));
+                  }
+                  // 선택된 노드 상태도 즉시 반영
+                  setSelected((s) => ({ ...s, is_current: true }));
+                }}
+              >
+                현재 버전으로 설정
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

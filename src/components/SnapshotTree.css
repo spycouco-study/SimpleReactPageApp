@@ -71,6 +71,55 @@ svg {
   background: #0056b3;
 }
 
+/* 상세 패널 */
+.st-detail {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 280px;
+  background: #ffffff;
+  border: 1px solid #dfe3e8;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  z-index: 10;
+}
+
+.st-graph-wrap { position: relative; height: calc(100% - 48px); }
+
+.st-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.st-detail-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 12px;
+}
+
+.st-detail-close:hover { color: #000; }
+
+.st-detail-body button {
+  padding: 6px 10px;
+  background: #137333;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.st-detail-body button:hover { background: #0d5a27; }
+
 .st-node {
   margin: 2px 0;
 }
