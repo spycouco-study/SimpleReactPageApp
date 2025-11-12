@@ -12,6 +12,7 @@ function App() {
   const [activeTab, setActiveTab] = useState('markdown'); // 'markdown', 'boundingBox', 'data', 'snapshots'
   const [activeChatTab, setActiveChatTab] = useState('chatbot1'); // 'chatbot1' or 'chatbot2'
   const [isEditing, setIsEditing] = useState(false);
+  const [gameName, setGameName] = useState(''); // 게임 이름 상태
 
   const handleMarkdownUpdate = (content) => {
     setMarkdownContent(content);
@@ -53,7 +54,17 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>알아서 만들어 주는 AI 놀이공원, Alparka!</h1>
+        <h1>알아서 만들어 주는 AI 놀이공원, Alparka! {gameName ? `- ${gameName}` : ''}</h1>
+        <div style={{ marginTop: '10px' }}>
+          <label style={{ marginRight: '8px' }}>게임 이름:</label>
+          <input
+            type="text"
+            value={gameName}
+            onChange={(e) => setGameName(e.target.value)}
+            placeholder="게임 이름을 입력하세요"
+            style={{ padding: '6px 10px', fontSize: '14px', minWidth: '220px' }}
+          />
+        </div>
       </header>
       <main className="split-layout">
         {/* 챗봇 섹션 */}
@@ -74,9 +85,9 @@ function App() {
           </div>
           <div className="chat-content">
             {activeChatTab === 'chatbot1' ? (
-              <ChatBot onMarkdownUpdate={handleMarkdownUpdate} />
+              <ChatBot onMarkdownUpdate={handleMarkdownUpdate} gameName={gameName} />
             ) : (
-              <ChatBot2 onMarkdownUpdate={handleMarkdownUpdate} />
+              <ChatBot2 onMarkdownUpdate={handleMarkdownUpdate} gameName={gameName} />
             )}
           </div>
         </div>

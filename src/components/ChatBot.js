@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './ChatBot.css';
 
-function ChatBot({ onMarkdownUpdate }) {
+function ChatBot({ onMarkdownUpdate, gameName }) {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const messagesEndRef = useRef(null);
@@ -59,7 +59,8 @@ function ChatBot({ onMarkdownUpdate }) {
         try {
             // 서버로 메시지 전송
             const response = await axios.post('/process-code', {
-                message: currentMessage
+                message: currentMessage,
+                game_name: gameName || ''
             });
 
             // 임시 메시지를 실제 응답으로 교체

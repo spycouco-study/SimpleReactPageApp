@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './ChatBot2.css';
 
-function ChatBot({ onMarkdownUpdate }) {
+function ChatBot({ onMarkdownUpdate, gameName }) {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const [answers, setAnswers] = useState({});
@@ -145,7 +145,8 @@ function ChatBot({ onMarkdownUpdate }) {
             // 서버로 메시지 전송
             //const response = await axios.post('/process-code', {
             const response = await axios.post('/question', {
-                message: currentMessage
+                message: currentMessage,
+                game_name: gameName || ''
             });
 
             // 서버 응답을 파싱하여 여러 메시지로 분리
@@ -395,11 +396,42 @@ function ChatBot({ onMarkdownUpdate }) {
                                                     });
 
                                                     try {
-                                                        const response = await axios.post('/test', submitData, {
+                                                        // 1. 기존 submitData (JSON 문자열)를 객체로 파싱합니다.
+                                                        // const originalData = JSON.parse(submitData);
+
+                                                        // 2. 상위 계층 객체(Wrapper Object)를 만듭니다.
+                                                        const data = {
+                                                            // 💡 래퍼 객체의 키: game_name
+                                                            game_name: gameName, 
+                                                            // 💡 래퍼 객체의 키: 기존 제출 데이터 (예: content, payload 등)
+                                                            //payload: originalData 
+                                                            payload: submitData 
+                                                            // 'payload' 대신 'data', 'content' 등 의미에 맞는 키를 사용해도 됩니다.
+                                                        };
+
+                                                        // 3. 수정된 객체를 다시 문자열(text/plain)로 만들어 요청 본문으로 사용합니다.
+                                                        //const newSubmitData = JSON.stringify(originalData);
+
+                                                        const response = await axios.post('/qna', data, { // 💡 newSubmitData 사용
+                                                            // 💡 수정된 부분: params 필드 제거
+                                                            // params: {
+                                                            //     game_name: gameName || ''
+                                                            // },
                                                             headers: {
-                                                                'Content-Type': 'text/plain'
+                                                                // Content-Type은 그대로 'text/plain' 유지
+                                                                //'Content-Type': 'text/plain' 
+                                                                'Content-Type': 'application/json'
                                                             }
                                                         });
+
+                                                        // const response = await axios.post('/test', submitData, {
+                                                        //     params: {
+                                                        //         game_name: gameName || ''
+                                                        //     },
+                                                        //     headers: {
+                                                        //         'Content-Type': 'text/plain'
+                                                        //     }
+                                                        // });
                                                         
                                                         // 전송한 데이터와 받은 응답을 상세히 출력
                                                         console.group('서버 통신 상세 정보');
@@ -435,9 +467,13 @@ function ChatBot({ onMarkdownUpdate }) {
                                                                 }
                                                             }
 
-                                                            // 제출 성공 후 갱신된 사양서 가져오기
+                                                            // 제출 성공 후 갱신된 사양서 가져오기`
                                                             try {
-                                                                const specRes = await axios.get('/spec');
+                                                                const specRes = await axios.get('/spec', {
+                                                                    params: {
+                                                                        game_name: gameName || ''
+                                                                    }
+                                                                });
                                                                 if (specRes?.data) {
                                                                     if (typeof onMarkdownUpdate === 'function') {
                                                                         onMarkdownUpdate(specRes.data);
