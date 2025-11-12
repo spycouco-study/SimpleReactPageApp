@@ -251,8 +251,7 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
                       if (onSnapshotUpdate) {
                         onSnapshotUpdate(data);
                       }
-                      // 로컬 상태도 동기화
-                      setCustomData(data);
+                      // 로컬 상태도 동기화 (customData는 사용자 업로드 전용)
                       setVersions(data.versions);
                       // 선택 상태를 최신 데이터의 해당 버전으로 업데이트
                       const updatedSel = data.versions.find(v => v.version === selected.version) || null;

@@ -74,8 +74,12 @@ function ChatBot({ onMarkdownUpdate, onSnapshotUpdate, gameName }) {
             try {
                 const snapRes = await axios.get('/snapshot-log', {
                     params: {
-                        game_name: gameName || ''
-                    }
+                        game_name: gameName || '',
+                        _t: Date.now(), // 캐시 방지
+                    },
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                    },
                 });
 
                 const data = snapRes?.data;
