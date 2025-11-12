@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './ChatBot.css';
 
-function ChatBot({ onMarkdownUpdate, gameName }) {
+function ChatBot({ onMarkdownUpdate, onSnapshotUpdate, gameName }) {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const messagesEndRef = useRef(null);
@@ -69,6 +69,22 @@ function ChatBot({ onMarkdownUpdate, gameName }) {
                     ? { text: response.data.reply, sender: 'bot' }
                     : msg
             ));
+
+            // 추가: 스냅샷 로그 가져오기
+            try {
+                const snapRes = await axios.get('/snapshot-log', {
+                    params: {
+                        game_name: gameName || ''
+                    }
+                });
+
+                const data = snapRes?.data;
+                if (data && onSnapshotUpdate) {
+                    onSnapshotUpdate(data);
+                }
+            } catch (snapErr) {
+                console.warn('스냅샷 로그 가져오기 실패:', snapErr);
+            }
         } catch (error) {
             console.error('Error:', error);
             // 에러 메시지 표시

@@ -13,9 +13,18 @@ function App() {
   const [activeChatTab, setActiveChatTab] = useState('chatbot1'); // 'chatbot1' or 'chatbot2'
   const [isEditing, setIsEditing] = useState(false);
   const [gameName, setGameName] = useState(''); // 게임 이름 상태
+  const [snapshotData, setSnapshotData] = useState(null); // 스냅샷 데이터 상태
 
   const handleMarkdownUpdate = (content) => {
     setMarkdownContent(content);
+  };
+  const handleSnapshotUpdate = (json) => {
+    // 유효성 간단 체크: versions 배열 존재 여부
+    if (json && Array.isArray(json.versions)) {
+      setSnapshotData(json);
+    } else {
+      console.warn('Invalid snapshot data, expected { versions: [...] }');
+    }
   };
   
   const handleEditorChange = (e) => {
@@ -85,9 +94,9 @@ function App() {
           </div>
           <div className="chat-content">
             {activeChatTab === 'chatbot1' ? (
-              <ChatBot onMarkdownUpdate={handleMarkdownUpdate} gameName={gameName} />
+              <ChatBot onMarkdownUpdate={handleMarkdownUpdate} onSnapshotUpdate={handleSnapshotUpdate} gameName={gameName} />
             ) : (
-              <ChatBot2 onMarkdownUpdate={handleMarkdownUpdate} gameName={gameName} />
+              <ChatBot2 onMarkdownUpdate={handleMarkdownUpdate} onSnapshotUpdate={handleSnapshotUpdate} gameName={gameName} />
             )}
           </div>
         </div>
@@ -153,7 +162,7 @@ function App() {
           {activeTab === 'snapshots' && (
             <div className="snapshot-section" style={{ flex: 1 }}>
               <h2>프로젝트 스냅샷 트리</h2>
-              <SnapshotTree />
+              <SnapshotTree data={snapshotData || undefined} />
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import './SnapshotTree.css';
 
 // 기본 스냅샷 데이터 (사용자가 제공한 예시)
@@ -112,6 +112,14 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
   const [versions, setVersions] = useState(data?.versions || []);
   const [selected, setSelected] = useState(null); // 선택된 버전 오브젝트
   const fileRef = useRef(null);
+
+  // 외부 data prop이 변경되면, 사용자 업로드(customData)가 없는 경우에만 동기화
+  useEffect(() => {
+    if (!customData) {
+      setVersions(data?.versions || []);
+      setSelected(null);
+    }
+  }, [data, customData]);
 
   // 외부 data 혹은 업로드 데이터 변화에 따라 versions 상태 갱신
   const effectiveData = useMemo(() => (customData ? customData : { versions }), [customData, versions]);
