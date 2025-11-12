@@ -162,7 +162,7 @@ function App() {
           {activeTab === 'snapshots' && (
             <div className="snapshot-section" style={{ flex: 1 }}>
               <h2>프로젝트 스냅샷 트리</h2>
-              <SnapshotTree data={snapshotData || undefined} />
+              <SnapshotTree data={snapshotData || undefined} gameName={gameName} onSnapshotUpdate={handleSnapshotUpdate} />
             </div>
           )}
         </div>

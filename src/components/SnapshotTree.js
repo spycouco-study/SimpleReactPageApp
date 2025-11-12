@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
+import axios from 'axios';
 import './SnapshotTree.css';
 
 // 기본 스냅샷 데이터 (사용자가 제공한 예시)
@@ -107,10 +108,11 @@ function layoutTreeVertical(roots, hGap = 110, vGap = 110, margin = 50) {
   return { width, height, nodes: placed, edges: placedEdges };
 }
 
-export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
+export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSnapshotUpdate }) {
   const [customData, setCustomData] = useState(null);
   const [versions, setVersions] = useState(data?.versions || []);
   const [selected, setSelected] = useState(null); // 선택된 버전 오브젝트
+  const [isApplying, setIsApplying] = useState(false);
   const fileRef = useRef(null);
 
   // 외부 data prop이 변경되면, 사용자 업로드(customData)가 없는 경우에만 동기화
@@ -226,24 +228,47 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS }) {
             <div><b>현재 여부:</b> {selected.is_current ? 'true' : 'false'}</div>
             <div style={{ marginTop: 12 }}>
               <button
-                onClick={() => {
-                  // 선택된 버전만 is_current = true, 나머지는 false
-                  setVersions((prev) => prev.map((v) => ({
-                    ...v,
-                    is_current: v.version === selected.version,
-                  })));
-                  // customData가 있으면 동기화, 없으면 내부 versions 사용 중이므로 그대로
-                  if (customData) {
-                    setCustomData((prev) => ({ ...prev, versions: prev.versions.map((v) => ({
-                      ...v,
-                      is_current: v.version === selected.version,
-                    })) }));
+                disabled={isApplying}
+                onClick={async () => {
+                  if (!selected) return;
+                  setIsApplying(true);
+                  try {
+                    // 1) 서버에 복원 요청 (복원 대상 버전명 포함)
+                    await axios.post('/restore-version', {
+                      version: selected.version,
+                      game_name: gameName || ''
+                    });
+
+                    // 2) 최신 스냅샷 로그 재요청하여 화면 갱신
+                    const snapRes = await axios.get('/snapshot-log', {
+                      params: {
+                        game_name: gameName || ''
+                      }
+                    });
+                    const data = snapRes?.data;
+                    if (data && Array.isArray(data.versions)) {
+                      // 전역(부모) 갱신 콜백이 있으면 우선 전달
+                      if (onSnapshotUpdate) {
+                        onSnapshotUpdate(data);
+                      }
+                      // 로컬 상태도 동기화
+                      setCustomData(data);
+                      setVersions(data.versions);
+                      // 선택 상태를 최신 데이터의 해당 버전으로 업데이트
+                      const updatedSel = data.versions.find(v => v.version === selected.version) || null;
+                      setSelected(updatedSel);
+                    } else {
+                      console.warn('스냅샷 응답 형식이 올바르지 않습니다. { versions: [...] } 예상');
+                    }
+                  } catch (err) {
+                    console.error('버전 복원 중 오류:', err);
+                    alert('버전 복원 중 오류가 발생했습니다.');
+                  } finally {
+                    setIsApplying(false);
                   }
-                  // 선택된 노드 상태도 즉시 반영
-                  setSelected((s) => ({ ...s, is_current: true }));
                 }}
               >
-                현재 버전으로 설정
+                {isApplying ? '적용 중…' : '현재 버전으로 설정'}
               </button>
             </div>
           </div>
