@@ -6,6 +6,7 @@ import ReactMarkdown from 'react-markdown';
 import BoundingBoxEditor from './components/BoundingBoxEditor';
 import DataEditor from './components/DataEditor';
 import SnapshotTree from './components/SnapshotTree';
+import axios from 'axios';
 
 function App() {
   const [markdownContent, setMarkdownContent] = useState('# Alparka 놀이공원 기획서\n\n[기획서 내용]');
@@ -84,52 +85,47 @@ function App() {
           console.error('Failed to GET /snapshot-log:', snapErr);
         }
 
-        // 이어서 스펙(마크다운) 갱신
+        // // 이어서 스펙(마크다운) 갱신 - 단순화: 문자열이라고 가정
+        // try {
+        //   const specRes = await axios.get('/spec', {
+        //     params: { game_name: gameName.trim() },
+        //     responseType: 'text'
+        //   });
+        //   const mdText = typeof specRes.data === 'string' ? specRes.data : String(specRes.data ?? '');
+        //   setMarkdownContent(mdText);
+        // } catch (specErr) {
+        //   console.error('Failed to GET /spec:', specErr);
+        // }
+        // 제출 성공 후 갱신된 사양서 가져오기`
         try {
-          const specQuery = new URLSearchParams({ game_name: gameName.trim() }).toString();
-          const specRes = await fetch(`/spec?${specQuery}`, {
-            method: 'GET',
-            headers: { 'Accept': 'text/markdown, text/plain, */*' }
-          });
-          const contentType = (specRes.headers.get('content-type') || '').toLowerCase();
-          let mdText = '';
-          if (contentType.includes('application/json')) {
-            try {
-              const parsed = await specRes.json();
-              if (typeof parsed === 'string') {
-                mdText = parsed; // JSON 문자열을 그대로 사용
-              } else if (parsed && typeof parsed === 'object') {
-                if (typeof parsed.markdown === 'string') mdText = parsed.markdown;
-                else if (typeof parsed.content === 'string') mdText = parsed.content;
-                else if (typeof parsed.text === 'string') mdText = parsed.text;
-                else if (Array.isArray(parsed)) mdText = parsed.join('\n');
-                else mdText = '```json\n' + JSON.stringify(parsed, null, 2) + '\n```';
-              } else {
-                mdText = String(parsed ?? '');
-              }
-            } catch (e3) {
-              // JSON으로 파싱 실패 시 텍스트로 받아보고, JSON 문자열이면 디코드
-              const raw = await specRes.text();
-              try {
-                const maybeString = JSON.parse(raw);
-                mdText = typeof maybeString === 'string' ? maybeString : raw;
-              } catch {
-                mdText = raw;
-              }
+            const specRes = await axios.get('/spec', {
+                params: {
+                    game_name: gameName || ''
+                }
+            });
+            if (specRes?.data) {
+                //if (typeof onMarkdownUpdate === 'function') {
+                    setMarkdownContent(specRes.data);
+                //}
+                // setMessages(prev => [...prev, {
+                //     text: '갱신된 사양서를 불러왔습니다.',
+                //     sender: 'bot',
+                //     type: 'comment'
+                // }]);
             }
-          } else {
-            const raw = await specRes.text();
-            // 따옴표로 감싼 JSON 문자열 형태("...")면 디코드하여 \n 등을 실제 개행으로 복원
-            try {
-              const maybeString = JSON.parse(raw);
-              mdText = typeof maybeString === 'string' ? maybeString : raw;
-            } catch {
-              mdText = raw;
+        } catch (specError) {
+            console.group('사양서 갱신 오류');
+            console.error('오류 객체:', specError);
+            if (specError.response) {
+                console.error('서버 응답 상태:', specError.response.status);
+                console.error('서버 응답 데이터:', specError.response.data);
             }
-          }
-          setMarkdownContent(mdText);
-        } catch (specErr) {
-          console.error('Failed to GET /spec:', specErr);
+            console.groupEnd();
+            // setMessages(prev => [...prev, {
+            //     text: '사양서를 불러오는 중 오류가 발생했습니다.',
+            //     sender: 'bot',
+            //     type: 'comment'
+            // }]);
         }
       } catch (err) {
         console.error('Failed to GET /game_data:', err);
