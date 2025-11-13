@@ -12,12 +12,31 @@
 .snapshot-tree.graph {
   height: 100%;
   padding: 0;
+  position: relative;
 }
 
+/* 스크롤 컨테이너: 실제 SVG 크기를 유지하고 필요시 스크롤 표시 */
+.st-graph-wrap {
+  position: absolute;
+  top: 48px; /* 툴바 높이만큼 아래 */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
+  cursor: grab;
+}
+
+/* 드래그 중 시각적 피드백 */
+.st-graph-wrap.dragging { cursor: grabbing; }
+
+/* 확대/축소 스케일 적용되는 캔버스 */
+.st-canvas { will-change: transform; }
+
+/* SVG는 계산된 width/height를 그대로 사용 (축소 방지) */
 svg {
-  width: 100%;
-  height: 100%;
   display: block;
+  min-width: 600px;  /* 너무 작아지지 않도록 기본 최소 폭 */
+  min-height: 400px; /* 기본 최소 높이 */
 }
 
 .st-edge {
@@ -89,7 +108,7 @@ svg {
   z-index: 10;
 }
 
-.st-graph-wrap { position: relative; height: calc(100% - 48px); }
+/* 이전 규칙 대체됨: .st-graph-wrap는 절대 배치 + overflow:auto 사용 */
 
 .st-detail-header {
   display: flex;

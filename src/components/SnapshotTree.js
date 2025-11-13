@@ -114,6 +114,17 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
   const [selected, setSelected] = useState(null); // 선택된 버전 오브젝트
   const [isApplying, setIsApplying] = useState(false);
   const fileRef = useRef(null);
+  const wrapRef = useRef(null);
+  const [scale, setScale] = useState(1);
+  const scaleRef = useRef(1);
+  const wasDraggingRef = useRef(false);
+
+  const MIN_SCALE = 0.75;
+  const MAX_SCALE = 2.5;
+
+  useEffect(() => {
+    scaleRef.current = scale;
+  }, [scale]);
 
   // 외부 data prop이 변경되면, 사용자 업로드(customData)가 없는 경우에만 동기화
   useEffect(() => {
@@ -128,6 +139,79 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
 
   const roots = useMemo(() => buildTree(effectiveData?.versions || []), [effectiveData]);
   const { width, height, nodes, edges } = useMemo(() => layoutTreeVertical(roots), [roots]);
+
+  // 드래그 패닝 + Ctrl+휠 줌
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+
+    let isDown = false;
+    let startX = 0, startY = 0;
+    let lastX = 0, lastY = 0;
+
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return; // 좌클릭만
+      isDown = true;
+      startX = e.clientX; startY = e.clientY;
+      lastX = e.clientX; lastY = e.clientY;
+      el.classList.add('dragging');
+      // 텍스트 선택 방지
+      e.preventDefault();
+    };
+    const onMouseMove = (e) => {
+      if (!isDown) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 3) {
+        wasDraggingRef.current = true;
+      }
+      el.scrollLeft -= dx;
+      el.scrollTop -= dy;
+      lastX = e.clientX; lastY = e.clientY;
+    };
+    const endDrag = () => {
+      if (!isDown) return;
+      isDown = false;
+      el.classList.remove('dragging');
+      // 클릭과 구분되도록 잠깐 뒤에 해제
+      setTimeout(() => { wasDraggingRef.current = false; }, 50);
+    };
+
+    const onWheel = (e) => {
+      if (!e.ctrlKey) return; // 일반 스크롤은 통과
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const mouseXInView = e.clientX - rect.left;
+      const mouseYInView = e.clientY - rect.top;
+      const preContentX = (el.scrollLeft + mouseXInView) / scaleRef.current;
+      const preContentY = (el.scrollTop + mouseYInView) / scaleRef.current;
+
+      const direction = e.deltaY < 0 ? 1 : -1; // 위로 굴리면 확대
+      const factor = direction > 0 ? 1.1 : 0.9;
+      const next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scaleRef.current * factor));
+      if (next === scaleRef.current) return;
+      setScale(next);
+
+      // 포인터 고정 줌: 포인터 위치가 가리키던 콘텐츠 좌표 유지
+      // 다음 프레임에 스크롤 보정
+      requestAnimationFrame(() => {
+        el.scrollLeft = preContentX * next - mouseXInView;
+        el.scrollTop = preContentY * next - mouseYInView;
+      });
+    };
+
+    el.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', endDrag);
+    el.addEventListener('wheel', onWheel, { passive: false });
+
+    return () => {
+      el.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', endDrag);
+      el.removeEventListener('wheel', onWheel);
+    };
+  }, []);
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -191,8 +275,9 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
           <button onClick={() => { setCustomData(null); setVersions(data?.versions || []); setSelected(null); }}>기본 데이터로 복원</button>
         )}
       </div>
-      <div className="st-graph-wrap">
-      <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMinYMin meet">
+  <div className="st-graph-wrap" ref={wrapRef}>
+  <div className="st-canvas" style={{ width: width, height: height, transform: `scale(${scale})`, transformOrigin: '0 0' }}>
+  <svg width={width} height={height}>
         <g className="st-edges">
           {edges.map(([p, c], idx) => (
             <path
@@ -204,7 +289,7 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
         </g>
         <g className="st-nodes">
           {nodes.map((n) => (
-            <g key={n.version} className="st-node-g" transform={`translate(${n.x}, ${n.y})`} onClick={() => setSelected(n)}>
+    <g key={n.version} className="st-node-g" transform={`translate(${n.x}, ${n.y})`} onClick={() => { if (!wasDraggingRef.current) setSelected(n); }}>
               <circle r={20} className={`st-node ${n.is_current ? 'current' : n.is_latest ? 'latest' : ''}`} />
               <text className="st-label" x={26} y={2}>{n.version}</text>
               <text className="st-sub" x={26} y={18}>{(() => { try { const d = new Date(n.timestamp); return d.toLocaleString(); } catch { return n.timestamp; } })()}</text>
@@ -212,6 +297,7 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
           ))}
         </g>
       </svg>
+  </div>
       </div>
 
       {selected && (
