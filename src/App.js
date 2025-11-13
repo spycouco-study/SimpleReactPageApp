@@ -83,6 +83,54 @@ function App() {
         } catch (snapErr) {
           console.error('Failed to GET /snapshot-log:', snapErr);
         }
+
+        // 이어서 스펙(마크다운) 갱신
+        try {
+          const specQuery = new URLSearchParams({ game_name: gameName.trim() }).toString();
+          const specRes = await fetch(`/spec?${specQuery}`, {
+            method: 'GET',
+            headers: { 'Accept': 'text/markdown, text/plain, */*' }
+          });
+          const contentType = (specRes.headers.get('content-type') || '').toLowerCase();
+          let mdText = '';
+          if (contentType.includes('application/json')) {
+            try {
+              const parsed = await specRes.json();
+              if (typeof parsed === 'string') {
+                mdText = parsed; // JSON 문자열을 그대로 사용
+              } else if (parsed && typeof parsed === 'object') {
+                if (typeof parsed.markdown === 'string') mdText = parsed.markdown;
+                else if (typeof parsed.content === 'string') mdText = parsed.content;
+                else if (typeof parsed.text === 'string') mdText = parsed.text;
+                else if (Array.isArray(parsed)) mdText = parsed.join('\n');
+                else mdText = '```json\n' + JSON.stringify(parsed, null, 2) + '\n```';
+              } else {
+                mdText = String(parsed ?? '');
+              }
+            } catch (e3) {
+              // JSON으로 파싱 실패 시 텍스트로 받아보고, JSON 문자열이면 디코드
+              const raw = await specRes.text();
+              try {
+                const maybeString = JSON.parse(raw);
+                mdText = typeof maybeString === 'string' ? maybeString : raw;
+              } catch {
+                mdText = raw;
+              }
+            }
+          } else {
+            const raw = await specRes.text();
+            // 따옴표로 감싼 JSON 문자열 형태("...")면 디코드하여 \n 등을 실제 개행으로 복원
+            try {
+              const maybeString = JSON.parse(raw);
+              mdText = typeof maybeString === 'string' ? maybeString : raw;
+            } catch {
+              mdText = raw;
+            }
+          }
+          setMarkdownContent(mdText);
+        } catch (specErr) {
+          console.error('Failed to GET /spec:', specErr);
+        }
       } catch (err) {
         console.error('Failed to GET /game_data:', err);
       }
