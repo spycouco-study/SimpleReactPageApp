@@ -167,6 +167,22 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
     }
   }, [width, height, versions]);
 
+  // 스냅샷 갱신 시 현재 버전 노드를 중앙에 보이도록 스크롤 조정
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || !nodes.length) return;
+    const target = nodes.find(n => n.is_current) || nodes.find(n => n.is_latest) || nodes[0];
+    if (!target) return;
+    const s = scaleRef.current || 1;
+    // 콘텐츠 좌표를 뷰 중앙에 위치시키기 위한 스크롤 계산
+    const desiredLeft = Math.max(0, target.x * s - el.clientWidth / 2);
+    const desiredTop = Math.max(0, target.y * s - el.clientHeight / 2);
+    requestAnimationFrame(() => {
+      el.scrollLeft = desiredLeft;
+      el.scrollTop = desiredTop;
+    });
+  }, [nodes, scale]);
+
   // 드래그 패닝 + Ctrl+휠 줌
   useEffect(() => {
     const el = wrapRef.current;
