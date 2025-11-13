@@ -179,11 +179,14 @@ function ChatBot({ onMarkdownUpdate, gameName }) {
 
     return (
         <div className="chatbot-container">
-            <div className="chat-controls">
-                <button onClick={handleRevert} className="revert-button">
-                    최근 변경사항 되돌리기
-                </button>
-            </div>
+            {/* 기획 QnA 탭에서는 되돌리기 버튼을 숨김 */}
+            {false && (
+                <div className="chat-controls">
+                    <button onClick={handleRevert} className="revert-button">
+                        최근 변경사항 되돌리기
+                    </button>
+                </div>
+            )}
             <div className="chat-messages">
                 {messages.reduce((result, message, index) => {
                     // 그룹 분리를 위한 메타 메시지는 렌더링하지 않음

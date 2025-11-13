@@ -194,7 +194,7 @@ function App() {
               className={`chat-tab ${activeChatTab === 'chatbot1' ? 'active' : ''}`}
               onClick={() => setActiveChatTab('chatbot1')}
             >
-              코드 수정
+              게임 만들기
             </button>
             <button
               className={`chat-tab ${activeChatTab === 'chatbot2' ? 'active' : ''}`}
