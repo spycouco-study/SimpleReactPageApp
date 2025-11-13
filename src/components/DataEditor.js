@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import axios from 'axios';
 import './DataEditor.css';
 
 /*
@@ -126,8 +127,9 @@ const NodeEditor = ({ path, value, onChange, depth = 0, label }) => {
   );
 };
 
-function DataEditor({ data, onDataChange, showImportExport = true }) {
+function DataEditor({ data, onDataChange, showImportExport = true, gameName, onSnapshotUpdate }) {
   const fileInputRef = useRef(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const setValueAtPath = (path, newVal) => {
     onDataChange(prev => {
@@ -174,22 +176,55 @@ function DataEditor({ data, onDataChange, showImportExport = true }) {
     URL.revokeObjectURL(url);
   };
 
+  // 저장 실행 핸들러: /data-update -> /snapshot-log
+  const handleSave = async () => {
+    if (isSaving) return;
+    if (!gameName || !gameName.trim()) {
+      alert('게임 이름을 먼저 입력해주세요.');
+      return;
+    }
+    if (data === undefined || data === null) {
+      alert('보낼 데이터가 없습니다.');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      const payload = { game_name: gameName, data };
+      await axios.post('/data-update', payload, { headers: { 'Content-Type': 'application/json' } });
+      const snapRes = await axios.get('/snapshot-log', { params: { game_name: gameName || '' } });
+      const snapData = snapRes?.data;
+      if (onSnapshotUpdate && snapData) onSnapshotUpdate(snapData);
+    } catch (err) {
+      console.error('Failed to save data or refresh snapshot-log:', err);
+      alert('저장 중 오류가 발생했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="data-editor-container">
-      <h2>데이터 편집</h2>
-      {showImportExport && (
-        <div className="data-editor-toolbar">
-          <button onClick={() => fileInputRef.current?.click()}>가져오기(JSON)</button>
-          <button onClick={handleExport}>내보내기(JSON)</button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json,.json"
-            style={{ display: 'none' }}
-            onChange={handleImport}
-          />
+      <div className="data-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <h2 style={{ margin: 0 }}>데이터 편집</h2>
+        <div className="data-editor-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {showImportExport && (
+            <>
+              <button onClick={() => fileInputRef.current?.click()}>가져오기(JSON)</button>
+              <button onClick={handleExport}>내보내기(JSON)</button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json,.json"
+                style={{ display: 'none' }}
+                onChange={handleImport}
+              />
+            </>
+          )}
+          <button onClick={handleSave} disabled={isSaving || !gameName?.trim()} title={!gameName?.trim() ? '게임 이름이 필요합니다' : '현재 데이터 저장'}>
+            {isSaving ? '저장 중…' : '저장'}
+          </button>
         </div>
-      )}
+      </div>
       <div className="hierarchy-editor">
   <NodeEditor path={[]} value={data} onChange={setValueAtPath} depth={0} />
       </div>

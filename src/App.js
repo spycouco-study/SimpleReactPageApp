@@ -223,22 +223,22 @@ function App() {
               기획서
             </button>
             <button 
-              onClick={() => setActiveTab('boundingBox')}
-              className={`tab-button ${activeTab === 'boundingBox' ? 'active' : ''}`}
-            >
-              바운딩 박스
-            </button>
-            <button 
               onClick={() => setActiveTab('data')}
               className={`tab-button ${activeTab === 'data' ? 'active' : ''}`}
             >
-              데이터
+              게임 데이터
             </button>
             <button 
               onClick={() => setActiveTab('snapshots')}
               className={`tab-button ${activeTab === 'snapshots' ? 'active' : ''}`}
             >
-              스냅샷
+              버전 관리
+            </button>
+            <button 
+              onClick={() => setActiveTab('boundingBox')}
+              className={`tab-button ${activeTab === 'boundingBox' ? 'active' : ''}`}
+            >
+              바운딩 박스
             </button>
           </div>
 
@@ -265,7 +265,13 @@ function App() {
           {/* 데이터 탭 */}
           {activeTab === 'data' && (
             <div className="data-section">
-              <DataEditor data={dataEditorData} onDataChange={setDataEditorData} showImportExport={false} />
+              <DataEditor
+                data={dataEditorData}
+                onDataChange={setDataEditorData}
+                showImportExport={false}
+                gameName={gameName}
+                onSnapshotUpdate={handleSnapshotUpdate}
+              />
             </div>
           )}
 
