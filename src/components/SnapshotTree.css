@@ -54,13 +54,19 @@ svg {
 }
 
 .st-node.current {
-  fill: #e6f4ea;
+  fill: #ffffff;
   stroke: #137333;
 }
 
 .st-node.latest:not(.current) {
   fill: #e8f0fe;
   stroke: #1967d2;
+}
+
+/* 현재 노드 내부의 작은 초록색 원 (불투명, 노드보다 약간 작음) */
+.st-node-current-dot {
+  fill: #137333;
+  stroke: none;
 }
 
 .st-label {

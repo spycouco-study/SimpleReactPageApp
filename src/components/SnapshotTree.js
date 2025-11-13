@@ -121,7 +121,7 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
   const scaleRef = useRef(1);
   const wasDraggingRef = useRef(false);
 
-  const MIN_SCALE = 0.5;
+  const MIN_SCALE = 0.7;
   const MAX_SCALE = 2.5;
 
   useEffect(() => {
@@ -335,13 +335,17 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
           ))}
         </g>
         <g className="st-nodes">
-          {nodes.map((n) => (
-    <g key={n.version} className="st-node-g" transform={`translate(${n.x}, ${n.y})`} onClick={() => { if (!wasDraggingRef.current) setSelected(n); }}>
-              <circle r={20} className={`st-node ${n.is_current ? 'current' : n.is_latest ? 'latest' : ''}`} />
-              <text className="st-label" x={26} y={2}>{n.version}</text>
-              <text className="st-sub" x={26} y={18}>{(() => { try { const d = new Date(n.timestamp); return d.toLocaleString(); } catch { return n.timestamp; } })()}</text>
-            </g>
-          ))}
+          {nodes.map((n) => {
+            const baseCircleClass = `st-node ${n.is_current ? 'current' : ''} ${(!n.is_current && n.is_latest) ? 'latest' : ''}`.trim();
+            return (
+              <g key={n.version} className="st-node-g" transform={`translate(${n.x}, ${n.y})`} onClick={() => { if (!wasDraggingRef.current) setSelected(n); }}>
+                <circle r={20} className={baseCircleClass} />
+                {n.is_current && <circle r={12} className="st-node-current-dot" />}
+                <text className="st-label" x={26} y={2}>{n.version}</text>
+                <text className="st-sub" x={26} y={18}>{(() => { try { const d = new Date(n.timestamp); return d.toLocaleString(); } catch { return n.timestamp; } })()}</text>
+              </g>
+            );
+          })}
         </g>
       </svg>
   </div>
