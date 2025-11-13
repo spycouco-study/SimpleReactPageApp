@@ -17,13 +17,35 @@ function ChatBot({ onMarkdownUpdate, onSnapshotUpdate, gameName }) {
 
     const handleRevert = async () => {
         try {
-            const response = await axios.post('/revert');
-            // 챗봇 응답을 대화 목록에 추가
+            const response = await axios.post('/revert', {
+                game_name: gameName || ''
+            });
+            
             const botMessage = {
                 text: response.data.reply || '이전 상태로 되돌렸습니다.',
                 sender: 'bot'
             };
             setMessages(prev => [...prev, botMessage]);
+
+            // 추가: 스냅샷 로그 가져오기
+            try {
+                const snapRes = await axios.get('/snapshot-log', {
+                    params: {
+                        game_name: gameName || '',
+                        _t: Date.now(), // 캐시 방지
+                    },
+                    headers: {
+                        'Cache-Control': 'no-cache',
+                    },
+                });
+
+                const data = snapRes?.data;
+                if (data && onSnapshotUpdate) {
+                    onSnapshotUpdate(data);
+                }
+            } catch (snapErr) {
+                console.warn('스냅샷 로그 가져오기 실패:', snapErr);
+            }
         } catch (error) {
             console.error('Error:', error);
             setMessages(prev => [...prev, {
