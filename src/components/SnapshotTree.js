@@ -121,7 +121,7 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
   const scaleRef = useRef(1);
   const wasDraggingRef = useRef(false);
 
-  const MIN_SCALE = 0.75;
+  const MIN_SCALE = 0.5;
   const MAX_SCALE = 2.5;
 
   useEffect(() => {
@@ -141,6 +141,31 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
 
   const roots = useMemo(() => buildTree(effectiveData?.versions || []), [effectiveData]);
   const { width, height, nodes, edges } = useMemo(() => layoutTreeVertical(roots), [roots]);
+
+  // 초기 확대 비율: 콘텐츠가 래퍼보다 크면 최소 배율로 시작, 아니면 1로 시작
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    try {
+      const cs = window.getComputedStyle(el);
+      const padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
+      const padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+      const availW = el.clientWidth - padX;
+      const availH = el.clientHeight - padY;
+      const needScrollX = width > availW;
+      const needScrollY = height > availH;
+      const next = (needScrollX || needScrollY) ? MIN_SCALE : 1;
+      if (scaleRef.current !== next) {
+        scaleRef.current = next;
+        setScale(next);
+      }
+      // 초기 위치를 좌상단으로
+      el.scrollLeft = 0;
+      el.scrollTop = 0;
+    } catch (_e) {
+      // 측정 실패 시 무시
+    }
+  }, [width, height, versions]);
 
   // 드래그 패닝 + Ctrl+휠 줌
   useEffect(() => {
