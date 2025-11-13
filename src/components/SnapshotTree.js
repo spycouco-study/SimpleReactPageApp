@@ -94,12 +94,14 @@ function layoutTreeVertical(roots, hGap = 110, vGap = 110, margin = 50) {
 
   const minX = Math.min(...nodes.map((n) => n._tx));
   const maxX = Math.max(...nodes.map((n) => n._tx));
-  const width = margin * 2 + (maxX - minX || hGap);
+  // 라벨 텍스트와 여백이 우측에서 잘리지 않도록 추가 패딩
+  const rightLabelPadding = 120; // 라벨 대략 길이만큼 확보
+  const width = margin * 2 + (maxX - minX || hGap) + rightLabelPadding;
   const height = margin * 2 + maxDepth * vGap;
 
   const placed = nodes.map((n) => ({
     ...n,
-    x: margin + (n._tx - minX),
+  x: margin + (n._tx - minX),
     y: margin + n.depth * vGap,
   }));
 

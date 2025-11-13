@@ -24,6 +24,8 @@
   bottom: 0;
   overflow: auto;
   cursor: grab;
+  /* 우측 상세 패널(280px) 및 여백을 고려한 추가 패딩으로 가림/잘림 방지 */
+  padding-right: 320px;
 }
 
 /* 드래그 중 시각적 피드백 */
