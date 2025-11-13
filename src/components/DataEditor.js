@@ -126,7 +126,7 @@ const NodeEditor = ({ path, value, onChange, depth = 0, label }) => {
   );
 };
 
-function DataEditor({ data, onDataChange }) {
+function DataEditor({ data, onDataChange, showImportExport = true }) {
   const fileInputRef = useRef(null);
 
   const setValueAtPath = (path, newVal) => {
@@ -177,17 +177,19 @@ function DataEditor({ data, onDataChange }) {
   return (
     <div className="data-editor-container">
       <h2>데이터 편집</h2>
-      <div className="data-editor-toolbar">
-        <button onClick={() => fileInputRef.current?.click()}>가져오기(JSON)</button>
-        <button onClick={handleExport}>내보내기(JSON)</button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="application/json,.json"
-          style={{ display: 'none' }}
-          onChange={handleImport}
-        />
-      </div>
+      {showImportExport && (
+        <div className="data-editor-toolbar">
+          <button onClick={() => fileInputRef.current?.click()}>가져오기(JSON)</button>
+          <button onClick={handleExport}>내보내기(JSON)</button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            style={{ display: 'none' }}
+            onChange={handleImport}
+          />
+        </div>
+      )}
       <div className="hierarchy-editor">
   <NodeEditor path={[]} value={data} onChange={setValueAtPath} depth={0} />
       </div>

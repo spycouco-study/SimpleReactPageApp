@@ -71,7 +71,10 @@ main {
 .tab-navigation {
   display: flex;
   gap: 10px;
-  margin-bottom: 10px;
+  /* 좌측 탭 바와 높이/여백 통일 */
+
+  
+  align-items: center;
 }
 
 .tab-button {
@@ -203,8 +206,9 @@ main {
 .chat-tabs {
     display: flex;
     gap: 10px;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     padding: 0 10px;
+    align-items: center; /* 수직 정렬 통일 */
 }
 
 .chat-tab {
@@ -233,4 +237,13 @@ main {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+}
+
+/* 좌/우 탭 버튼 높이 통일 */
+.tab-button,
+.chat-tab {
+  height: 40px;        /* 동일 고정 높이 */
+  padding: 0 16px;     /* 수평 패딩만 적용 */
+  font-size: 16px;     /* 동일 폰트 크기 */
+  border-radius: 8px;  /* 동일 라운드 */
 }

@@ -265,7 +265,7 @@ function App() {
           {/* 데이터 탭 */}
           {activeTab === 'data' && (
             <div className="data-section">
-              <DataEditor data={dataEditorData} onDataChange={setDataEditorData} />
+              <DataEditor data={dataEditorData} onDataChange={setDataEditorData} showImportExport={false} />
             </div>
           )}
 
@@ -273,7 +273,7 @@ function App() {
           {activeTab === 'snapshots' && (
             <div className="snapshot-section" style={{ flex: 1 }}>
               <h2>프로젝트 스냅샷 트리</h2>
-              <SnapshotTree data={snapshotData || undefined} gameName={gameName} onSnapshotUpdate={handleSnapshotUpdate} />
+              <SnapshotTree data={snapshotData || undefined} gameName={gameName} onSnapshotUpdate={handleSnapshotUpdate} showImportExport={false} />
             </div>
           )}
         </div>

@@ -110,7 +110,7 @@ function layoutTreeVertical(roots, hGap = 110, vGap = 110, margin = 50) {
   return { width, height, nodes: placed, edges: placedEdges };
 }
 
-export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSnapshotUpdate }) {
+export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSnapshotUpdate, showImportExport = true }) {
   const [customData, setCustomData] = useState(null);
   const [versions, setVersions] = useState(data?.versions || []);
   const [selected, setSelected] = useState(null); // 선택된 버전 오브젝트
@@ -280,13 +280,15 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
   if (!nodes.length) {
     return (
       <div className="snapshot-tree graph">
-        <div className="st-toolbar">
-          <button onClick={() => fileRef.current?.click()}>JSON 불러오기</button>
-          <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleFile} />
-          {customData && (
-            <button onClick={() => setCustomData(null)}>기본 데이터로 복원</button>
-          )}
-        </div>
+        {showImportExport && (
+          <div className="st-toolbar">
+            <button onClick={() => fileRef.current?.click()}>JSON 불러오기</button>
+            <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleFile} />
+            {customData && (
+              <button onClick={() => setCustomData(null)}>기본 데이터로 복원</button>
+            )}
+          </div>
+        )}
         <div className="st-empty">스냅샷이 없습니다.</div>
       </div>
     );
@@ -294,14 +296,16 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
 
   return (
     <div className="snapshot-tree graph">
-      <div className="st-toolbar">
-        <button onClick={() => fileRef.current?.click()}>JSON 불러오기</button>
-        <button onClick={handleExport}>JSON 내보내기</button>
-        <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleFile} />
-        {customData && (
-          <button onClick={() => { setCustomData(null); setVersions(data?.versions || []); setSelected(null); }}>기본 데이터로 복원</button>
-        )}
-      </div>
+      {showImportExport && (
+        <div className="st-toolbar">
+          <button onClick={() => fileRef.current?.click()}>JSON 불러오기</button>
+          <button onClick={handleExport}>JSON 내보내기</button>
+          <input ref={fileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={handleFile} />
+          {customData && (
+            <button onClick={() => { setCustomData(null); setVersions(data?.versions || []); setSelected(null); }}>기본 데이터로 복원</button>
+          )}
+        </div>
+      )}
   <div className="st-graph-wrap" ref={wrapRef}>
   <div className="st-canvas" style={{ width: width, height: height, transform: `scale(${scale})`, transformOrigin: '0 0' }}>
   <svg width={width} height={height}>
