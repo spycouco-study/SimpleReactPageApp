@@ -13,7 +13,9 @@ function App() {
   const [activeChatTab, setActiveChatTab] = useState('chatbot1'); // 'chatbot1' or 'chatbot2'
   const [isEditing, setIsEditing] = useState(false);
   const [gameName, setGameName] = useState(''); // 게임 이름 상태
+  const [isGameNameLocked, setIsGameNameLocked] = useState(false); // 게임 이름 편집 잠금
   const [snapshotData, setSnapshotData] = useState(null); // 스냅샷 데이터 상태
+  const [dataEditorData, setDataEditorData] = useState({ key: 10 }); // 데이터 편집기 상태
 
   const handleMarkdownUpdate = (content) => {
     setMarkdownContent(content);
@@ -33,6 +35,41 @@ function App() {
 
   const toggleMode = () => {
     setIsEditing(prev => !prev);
+  };
+
+  // '확인/변경' 버튼 동작
+  const handleToggleGameName = async () => {
+    // 현재가 unlocked(확인 상태)일 때 클릭하면 잠그고 서버에서 데이터 가져오기
+    if (!isGameNameLocked) {
+      if (gameName.trim() === '') return; // 버튼 disabled 조건과 동일한 가드
+      setIsGameNameLocked(true);
+      try {
+        const query = new URLSearchParams({ game_name: gameName.trim() }).toString();
+        const res = await fetch(`/game_data?${query}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        let payload;
+        try {
+          // JSON 응답 시도
+          payload = await res.json();
+        } catch (e) {
+          // 텍스트로 온 경우 파싱
+          const text = await res.text();
+          payload = JSON.parse(text);
+        }
+        if (payload && typeof payload === 'object') {
+          setDataEditorData(payload);
+        } else {
+          console.warn('Unexpected /game_data response', payload);
+        }
+      } catch (err) {
+        console.error('Failed to GET /game_data:', err);
+      }
+    } else {
+      // 잠금 해제 -> 이름 변경 가능
+      setIsGameNameLocked(false);
+    }
   };
 
   const renderMarkdownSection = () => {
@@ -71,8 +108,18 @@ function App() {
             value={gameName}
             onChange={(e) => setGameName(e.target.value)}
             placeholder="게임 이름을 입력하세요"
-            style={{ padding: '6px 10px', fontSize: '14px', minWidth: '220px' }}
+            style={{ padding: '6px 10px', fontSize: '14px', minWidth: '220px', marginRight: '8px' }}
+            disabled={isGameNameLocked}
           />
+          <button
+            onClick={handleToggleGameName}
+            disabled={!isGameNameLocked && gameName.trim() === ''}
+            title={isGameNameLocked ? '게임 이름 변경' : '게임 이름 확정'}
+            aria-pressed={isGameNameLocked}
+            style={{ padding: '6px 12px', fontSize: '14px' }}
+          >
+            {isGameNameLocked ? '변경' : '확인'}
+          </button>
         </div>
       </header>
       <main className="split-layout">
@@ -154,7 +201,7 @@ function App() {
           {/* 데이터 탭 */}
           {activeTab === 'data' && (
             <div className="data-section">
-              <DataEditor />
+              <DataEditor data={dataEditorData} onDataChange={setDataEditorData} />
             </div>
           )}
 

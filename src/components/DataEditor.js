@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import './DataEditor.css';
 
 /*
@@ -126,13 +126,13 @@ const NodeEditor = ({ path, value, onChange, depth = 0, label }) => {
   );
 };
 
-function DataEditor() {
-  const [data, setData] = useState({ key: 10 });
+function DataEditor({ data, onDataChange }) {
   const fileInputRef = useRef(null);
 
   const setValueAtPath = (path, newVal) => {
-    setData(prev => {
-      const clone = structuredClone(prev);
+    onDataChange(prev => {
+      const base = typeof prev === 'object' && prev !== null ? prev : {};
+      const clone = structuredClone(base);
       let cur = clone;
       for (let i = 0; i < path.length - 1; i++) {
         cur = cur[path[i]];
@@ -150,7 +150,7 @@ function DataEditor() {
       try {
         const json = JSON.parse(ev.target.result);
         if (json && typeof json === 'object') {
-          setData(json);
+          onDataChange(json);
         }
       } catch(err) {
         alert('JSON 파싱 오류: ' + err.message);
@@ -189,7 +189,7 @@ function DataEditor() {
         />
       </div>
       <div className="hierarchy-editor">
-        <NodeEditor path={[]} value={data} onChange={setValueAtPath} depth={0} />
+  <NodeEditor path={[]} value={data} onChange={setValueAtPath} depth={0} />
       </div>
       <div className="data-editor-preview">
         <h3>미리보기 JSON</h3>
