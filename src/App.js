@@ -63,6 +63,26 @@ function App() {
         } else {
           console.warn('Unexpected /game_data response', payload);
         }
+
+        // 이어서 스냅샷 로그 갱신
+        try {
+          const snapQuery = new URLSearchParams({ game_name: gameName.trim() }).toString();
+          const snapRes = await fetch(`/snapshot-log?${snapQuery}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+          });
+          let snapPayload;
+          try {
+            snapPayload = await snapRes.json();
+          } catch (e2) {
+            const text2 = await snapRes.text();
+            snapPayload = JSON.parse(text2);
+          }
+          // 기존 검증 로직 사용
+          handleSnapshotUpdate(snapPayload);
+        } catch (snapErr) {
+          console.error('Failed to GET /snapshot-log:', snapErr);
+        }
       } catch (err) {
         console.error('Failed to GET /game_data:', err);
       }
