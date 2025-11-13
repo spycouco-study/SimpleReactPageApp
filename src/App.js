@@ -271,6 +271,7 @@ function App() {
                 showImportExport={false}
                 gameName={gameName}
                 onSnapshotUpdate={handleSnapshotUpdate}
+                hiddenTopLevelKeys={["assets"]}
               />
             </div>
           )}
