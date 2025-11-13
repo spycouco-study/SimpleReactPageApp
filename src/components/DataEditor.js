@@ -228,7 +228,7 @@ function DataEditor({ data, onDataChange, showImportExport = true, gameName, onS
             {showPreview ? 'JSON 미리보기 숨기기' : 'JSON 미리보기'}
           </button>
           <button onClick={handleSave} disabled={isSaving || !gameName?.trim()} title={!gameName?.trim() ? '게임 이름이 필요합니다' : '현재 데이터 저장'}>
-            {isSaving ? '저장 중…' : '저장'}
+            {isSaving ? '저장 중…' : '변경 내용 저장'}
           </button>
         </div>
       </div>
