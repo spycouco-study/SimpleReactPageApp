@@ -5,38 +5,38 @@ import './SnapshotTree.css';
 // 기본 스냅샷 데이터 (사용자가 제공한 예시)
 const DEFAULT_SNAPSHOTS = {
   versions: [
-    {
-      version: 'v1-1',
-      parent: null,
-      timestamp: '2025-11-11T15:59:22.534617',
-      summary: '',
-      is_latest: false,
-      is_current: false,
-    },
-    {
-      version: 'v2-1',
-      parent: 'v1-1',
-      timestamp: '2025-11-11T15:59:51.776138',
-      summary: '',
-      is_latest: false,
-      is_current: false,
-    },
-    {
-      version: 'v2-2',
-      parent: 'v1-1',
-      timestamp: '2025-11-11T16:00:44.291699',
-      summary: '',
-      is_latest: false,
-      is_current: false,
-    },
-    {
-      version: 'v3-1',
-      parent: 'v2-1',
-      timestamp: '2025-11-11T16:02:52.116514',
-      summary: '',
-      is_latest: true,
-      is_current: true,
-    },
+    // {
+    //   version: 'v1-1',
+    //   parent: null,
+    //   timestamp: '2025-11-11T15:59:22.534617',
+    //   summary: '',
+    //   is_latest: false,
+    //   is_current: false,
+    // },
+    // {
+    //   version: 'v2-1',
+    //   parent: 'v1-1',
+    //   timestamp: '2025-11-11T15:59:51.776138',
+    //   summary: '',
+    //   is_latest: false,
+    //   is_current: false,
+    // },
+    // {
+    //   version: 'v2-2',
+    //   parent: 'v1-1',
+    //   timestamp: '2025-11-11T16:00:44.291699',
+    //   summary: '',
+    //   is_latest: false,
+    //   is_current: false,
+    // },
+    // {
+    //   version: 'v3-1',
+    //   parent: 'v2-1',
+    //   timestamp: '2025-11-11T16:02:52.116514',
+    //   summary: '',
+    //   is_latest: true,
+    //   is_current: true,
+    // },
   ],
 };
 

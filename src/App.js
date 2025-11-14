@@ -9,14 +9,14 @@ import SnapshotTree from './components/SnapshotTree';
 import axios from 'axios';
 
 function App() {
-  const [markdownContent, setMarkdownContent] = useState('# Alparka 놀이공원 기획서\n\n[기획서 내용]');
+  const [markdownContent, setMarkdownContent] = useState('');//('# Alparka 놀이공원 기획서\n\n[기획서 내용]');
   const [activeTab, setActiveTab] = useState('markdown'); // 'markdown', 'boundingBox', 'data', 'snapshots'
   const [activeChatTab, setActiveChatTab] = useState('chatbot1'); // 'chatbot1' or 'chatbot2'
   const [isEditing, setIsEditing] = useState(false);
   const [gameName, setGameName] = useState(''); // 게임 이름 상태
   const [isGameNameLocked, setIsGameNameLocked] = useState(false); // 게임 이름 편집 잠금
   const [snapshotData, setSnapshotData] = useState(null); // 스냅샷 데이터 상태
-  const [dataEditorData, setDataEditorData] = useState({ key: 10 }); // 데이터 편집기 상태
+  const [dataEditorData, setDataEditorData] = useState({}); // 데이터 편집기 상태
   const [loadedChat, setLoadedChat] = useState(null); // 서버에서 불러온 채팅 내역
 
   const handleMarkdownUpdate = (content) => {
@@ -291,6 +291,7 @@ function App() {
             <div className="markdown-section">
               <button 
                 onClick={toggleMode} 
+                hidden
                 style={{ marginBottom: '15px', padding: '10px 20px', fontSize: '16px' }}
               >
                 {isEditing ? '👀 미리보기 모드로 전환' : '✍️ 편집 모드로 전환'} 
