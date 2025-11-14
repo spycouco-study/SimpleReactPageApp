@@ -17,6 +17,7 @@ function App() {
   const [isGameNameLocked, setIsGameNameLocked] = useState(false); // 게임 이름 편집 잠금
   const [snapshotData, setSnapshotData] = useState(null); // 스냅샷 데이터 상태
   const [dataEditorData, setDataEditorData] = useState({ key: 10 }); // 데이터 편집기 상태
+  const [loadedChat, setLoadedChat] = useState(null); // 서버에서 불러온 채팅 내역
 
   const handleMarkdownUpdate = (content) => {
     setMarkdownContent(content);
@@ -41,7 +42,7 @@ function App() {
   // '확인/변경' 버튼 동작
   const handleToggleGameName = async () => {
     // 현재가 unlocked(확인 상태)일 때 클릭하면 잠그고 서버에서 데이터 가져오기
-    if (!isGameNameLocked) {
+  if (!isGameNameLocked) {
       if (gameName.trim() === '') return; // 버튼 disabled 조건과 동일한 가드
       setIsGameNameLocked(true);
       try {
@@ -65,7 +66,7 @@ function App() {
           console.warn('Unexpected /game_data response', payload);
         }
 
-        // 이어서 스냅샷 로그 갱신
+  // 이어서 스냅샷 로그 갱신
         try {
           const snapQuery = new URLSearchParams({ game_name: gameName.trim() }).toString();
           const snapRes = await fetch(`/snapshot-log?${snapQuery}`, {
@@ -129,6 +130,37 @@ function App() {
         }
       } catch (err) {
         console.error('Failed to GET /game_data:', err);
+      }
+
+      // 마지막으로 채팅 이력 로드 (/load-chat)
+      try {
+        const chatQuery = new URLSearchParams({ game_name: gameName.trim() }).toString();
+        const chatRes = await fetch(`/load-chat?${chatQuery}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        let chatPayload;
+        try {
+          chatPayload = await chatRes.json();
+        } catch (e) {
+          const text = await chatRes.text();
+          chatPayload = JSON.parse(text);
+        }
+        if (chatPayload && Array.isArray(chatPayload.chat)) {
+          // from -> sender 로 매핑
+          const normalized = chatPayload.chat.map((m, i) => ({
+            sender: m.from === 'user' ? 'user' : 'bot',
+            text: m.text,
+            id: `loaded-${i}`
+          }));
+          setLoadedChat(normalized);
+        } else {
+          // chat 필드가 없거나 형식이 다르면 빈 배열로 처리
+          setLoadedChat([]);
+        }
+      } catch (chatErr) {
+        console.error('Failed to GET /load-chat:', chatErr);
+        setLoadedChat([]);
       }
     } else {
       // 잠금 해제 -> 이름 변경 가능
@@ -204,11 +236,12 @@ function App() {
             </button>
           </div>
           <div className="chat-content">
-            {activeChatTab === 'chatbot1' ? (
+      {activeChatTab === 'chatbot1' ? (
               <ChatBot
                 onMarkdownUpdate={handleMarkdownUpdate}
                 onSnapshotUpdate={handleSnapshotUpdate}
                 onGameDataUpdate={setDataEditorData}
+        loadedChat={loadedChat}
                 gameName={gameName}
               />
             ) : (
@@ -216,6 +249,7 @@ function App() {
                 onMarkdownUpdate={handleMarkdownUpdate}
                 onSnapshotUpdate={handleSnapshotUpdate}
                 onGameDataUpdate={setDataEditorData}
+        loadedChat={loadedChat}
                 gameName={gameName}
               />
             )}

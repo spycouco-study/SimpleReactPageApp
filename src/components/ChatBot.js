@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './ChatBot.css';
 
-function ChatBot({ onMarkdownUpdate, onSnapshotUpdate, onGameDataUpdate, gameName }) {
+function ChatBot({ onMarkdownUpdate, onSnapshotUpdate, onGameDataUpdate, loadedChat, gameName }) {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const messagesEndRef = useRef(null);
@@ -14,6 +14,13 @@ function ChatBot({ onMarkdownUpdate, onSnapshotUpdate, onGameDataUpdate, gameNam
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // 외부에서 불러온 채팅 이력 반영
+    useEffect(() => {
+        if (Array.isArray(loadedChat)) {
+            setMessages(loadedChat);
+        }
+    }, [loadedChat]);
 
     // 공통: 스냅샷 로그 및 게임 데이터 최신화
     const refreshSnapshotAndGameData = async () => {

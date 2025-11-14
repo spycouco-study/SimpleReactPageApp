@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import './ChatBot2.css';
 
-function ChatBot({ onMarkdownUpdate, gameName }) {
+function ChatBot({ onMarkdownUpdate, gameName, loadedChat }) {
     const [messages, setMessages] = useState([]);
     const [inputMessage, setInputMessage] = useState('');
     const [answers, setAnswers] = useState({});
@@ -40,6 +40,13 @@ function ChatBot({ onMarkdownUpdate, gameName }) {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // 외부에서 불러온 채팅 이력 반영
+    useEffect(() => {
+        if (Array.isArray(loadedChat)) {
+            setMessages(loadedChat);
+        }
+    }, [loadedChat]);
 
     // 서버의 reply(JSON 문자열 또는 객체)를 봇 메시지 배열로 변환
     const buildMessagesFromReply = (reply) => {
