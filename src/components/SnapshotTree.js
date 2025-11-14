@@ -110,7 +110,7 @@ function layoutTreeVertical(roots, hGap = 110, vGap = 110, margin = 50) {
   return { width, height, nodes: placed, edges: placedEdges };
 }
 
-export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSnapshotUpdate, showImportExport = true }) {
+export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSnapshotUpdate, showImportExport = true, onGameDataUpdate }) {
   const [customData, setCustomData] = useState(null);
   const [versions, setVersions] = useState(data?.versions || []);
   const [selected, setSelected] = useState(null); // 선택된 버전 오브젝트
@@ -384,17 +384,31 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
                     });
                     const data = snapRes?.data;
                     if (data && Array.isArray(data.versions)) {
-                      // 전역(부모) 갱신 콜백이 있으면 우선 전달
                       if (onSnapshotUpdate) {
                         onSnapshotUpdate(data);
                       }
-                      // 로컬 상태도 동기화 (customData는 사용자 업로드 전용)
                       setVersions(data.versions);
-                      // 선택 상태를 최신 데이터의 해당 버전으로 업데이트
                       const updatedSel = data.versions.find(v => v.version === selected.version) || null;
                       setSelected(updatedSel);
                     } else {
                       console.warn('스냅샷 응답 형식이 올바르지 않습니다. { versions: [...] } 예상');
+                    }
+                    // NEW: Fetch updated game data after snapshot log
+                    if (onGameDataUpdate && gameName) {
+                      try {
+                        const gdRes = await axios.get('/game_data', {
+                          params: { game_name: gameName || '' },
+                          headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
+                        });
+                        const payload = gdRes?.data;
+                        if (payload && typeof payload === 'object') {
+                          onGameDataUpdate(payload);
+                        } else {
+                          console.warn('예상치 못한 /game_data 응답 형식:', payload);
+                        }
+                      } catch (gdErr) {
+                        console.warn('게임 데이터 갱신 실패(/game_data):', gdErr);
+                      }
                     }
                   } catch (err) {
                     console.error('버전 복원 중 오류:', err);
