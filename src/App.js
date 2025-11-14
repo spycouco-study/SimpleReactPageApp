@@ -236,23 +236,23 @@ function App() {
             </button>
           </div>
           <div className="chat-content">
-      {activeChatTab === 'chatbot1' ? (
+            <div style={{ display: activeChatTab === 'chatbot1' ? 'block' : 'none', height: '100%' }}>
               <ChatBot
                 onMarkdownUpdate={handleMarkdownUpdate}
                 onSnapshotUpdate={handleSnapshotUpdate}
                 onGameDataUpdate={setDataEditorData}
-        loadedChat={loadedChat}
+                loadedChat={loadedChat}
                 gameName={gameName}
               />
-            ) : (
+            </div>
+            <div style={{ display: activeChatTab === 'chatbot2' ? 'block' : 'none', height: '100%' }}>
               <ChatBot2
                 onMarkdownUpdate={handleMarkdownUpdate}
                 onSnapshotUpdate={handleSnapshotUpdate}
                 onGameDataUpdate={setDataEditorData}
-        loadedChat={loadedChat}
                 gameName={gameName}
               />
-            )}
+            </div>
           </div>
         </div>
         
