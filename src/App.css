@@ -245,10 +245,18 @@ main {
 }
 
 .chat-content {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+  flex: 1;
+  position: relative; /* 컨테이너 기준 */
+  overflow: hidden; /* 외곽 잘림 방지용 */
+  display: block;
+  padding-top: 32px; /* 탭 헤더 높이만큼 */
+}
+.chat-content > div { /* 탭 콘텐츠 래퍼: 절대배치 대신 100% 높이 플렉스 */
+  position: relative;
+  height: 100%;
+  display: flex;  
+  flex-direction: column;
+  min-height: 0; /* 내부 스크롤 정상 동작 */
 }
 
 /* 좌/우 탭 버튼 높이 통일 */
