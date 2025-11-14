@@ -205,9 +205,19 @@ function App() {
           </div>
           <div className="chat-content">
             {activeChatTab === 'chatbot1' ? (
-              <ChatBot onMarkdownUpdate={handleMarkdownUpdate} onSnapshotUpdate={handleSnapshotUpdate} gameName={gameName} />
+              <ChatBot
+                onMarkdownUpdate={handleMarkdownUpdate}
+                onSnapshotUpdate={handleSnapshotUpdate}
+                onGameDataUpdate={setDataEditorData}
+                gameName={gameName}
+              />
             ) : (
-              <ChatBot2 onMarkdownUpdate={handleMarkdownUpdate} onSnapshotUpdate={handleSnapshotUpdate} gameName={gameName} />
+              <ChatBot2
+                onMarkdownUpdate={handleMarkdownUpdate}
+                onSnapshotUpdate={handleSnapshotUpdate}
+                onGameDataUpdate={setDataEditorData}
+                gameName={gameName}
+              />
             )}
           </div>
         </div>
