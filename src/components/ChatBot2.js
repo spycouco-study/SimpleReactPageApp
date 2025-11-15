@@ -146,7 +146,7 @@ function ChatBot({ onMarkdownUpdate, gameName }) {
         try {
             // 서버로 메시지 전송
             //const response = await axios.post('/process-code', {
-            const response = await axios.post('/question', {
+            const response = await axios.post('/spec-question', {
                 message: currentMessage,
                 game_name: gameName || ''
             });
