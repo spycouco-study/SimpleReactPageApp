@@ -29,6 +29,8 @@ function MediaExplorer({ gameName, isLocked, refreshToken }) {
   const didFetchRef = useRef(false);
   const lastTokenRef = useRef(refreshToken);
   const [assetStamp, setAssetStamp] = useState(0); // 캐시 무효화용 스탬프
+  const fileInputRef = useRef(null);
+  const [uploading, setUploading] = useState(false);
 
   const fetchAssets = async () => {
     if (!isLocked || !gameName || !gameName.trim()) {
@@ -130,6 +132,58 @@ function MediaExplorer({ gameName, isLocked, refreshToken }) {
             {previewItem.type === 'sound' && (
               <audio autoPlay controls src={previewItem.url} style={{ width: '100%', marginTop: '16px' }} />
             )}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12, gap: 8 }}>
+              <button
+                onClick={() => {
+                  if (!fileInputRef.current) return;
+                  fileInputRef.current.value = '';
+                  fileInputRef.current.click();
+                }}
+                disabled={uploading}
+              >
+                {uploading ? '업로드 중…' : '다른 파일로 교체'}
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={previewItem.type === 'image' ? 'image/*' : 'audio/mpeg,.mp3'}
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                if (!isLocked || !gameName?.trim()) {
+                  alert('게임 이름을 먼저 확정해주세요.');
+                  return;
+                }
+                // MP3만 허용 (프론트 선검증)
+                if (previewItem.type === 'sound') {
+                  const nameLower = file.name.toLowerCase();
+                  if (!nameLower.endsWith('.mp3')) {
+                    alert('사운드 교체는 MP3 파일만 가능합니다.');
+                    return;
+                  }
+                }
+                try {
+                  setUploading(true);
+                  const form = new FormData();
+                  form.append('game_name', gameName);
+                  form.append('old_name', previewItem.name);
+                  form.append('file', file);
+                  form.append('type', previewItem.type); // 서버는 typ 필드 기대
+                  await axios.post('/replace-asset', form);
+                  await fetchAssets();
+                  const newStamp = Date.now();
+                  setAssetStamp(newStamp);
+                  setPreviewItem((cur) => cur ? { ...cur, url: `${cur.url.split('?')[0]}?v=${newStamp}` } : cur);
+                } catch (err) {
+                  console.error('replace-asset failed:', err);
+                  alert('업로드 중 오류가 발생했습니다.');
+                } finally {
+                  setUploading(false);
+                }
+              }}
+            />
           </div>
         </div>
       )}
