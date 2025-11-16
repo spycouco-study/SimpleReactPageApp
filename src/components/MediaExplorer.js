@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import './MediaExplorer.css';
 
@@ -26,6 +26,8 @@ function MediaExplorer({ gameName, isLocked, refreshToken }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const didFetchRef = useRef(false);
+  const lastTokenRef = useRef(refreshToken);
 
   const fetchAssets = async () => {
     if (!isLocked || !gameName || !gameName.trim()) {
@@ -53,9 +55,18 @@ function MediaExplorer({ gameName, isLocked, refreshToken }) {
 
   // gameName 확정 후 또는 스냅샷 갱신(refreshToken 변화) 시에만 로드
   useEffect(() => {
+    if (!isLocked || !gameName || !gameName.trim()) return;
+    if (!Number.isFinite(refreshToken) || refreshToken <= 0) return;
+
+    // React 18 StrictMode에서는 mount 시 effect가 2번 호출될 수 있으므로
+    // 동일 토큰으로 중복 호출을 방지
+    if (didFetchRef.current && lastTokenRef.current === refreshToken) return;
+
+    didFetchRef.current = true;
+    lastTokenRef.current = refreshToken;
     fetchAssets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [refreshToken]);
+  }, [refreshToken, isLocked, gameName]);
 
   return (
     <div className="media-explorer">

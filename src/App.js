@@ -341,12 +341,13 @@ function App() {
             </div>
           )}
 
-          {/* 미디어 탭 */}
-          {activeTab === 'media' && (
-            <div className="data-section">
-              <MediaExplorer gameName={gameName} isLocked={isGameNameLocked} refreshToken={assetRefreshToken} />
-            </div>
-          )}
+          {/* 미디어 탭 - 항상 마운트, 표시만 전환하여 상태 유지 */}
+          <div
+            className="data-section"
+            style={{ display: activeTab === 'media' ? 'block' : 'none', height: '100%' }}
+          >
+            <MediaExplorer gameName={gameName} isLocked={isGameNameLocked} refreshToken={assetRefreshToken} />
+          </div>
         </div>
       </main>
     </div>
