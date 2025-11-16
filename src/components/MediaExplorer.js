@@ -21,7 +21,7 @@ import './MediaExplorer.css';
   참고: 파일 변경 후 최신 썸네일을 강제로 갱신하고 싶으면 timestamp 쿼리를 추가해 캐시를 회피.
 */
 
-function MediaExplorer({ gameName, isLocked, refreshToken }) {
+function MediaExplorer({ gameName, isLocked, refreshToken, onSnapshotUpdate }) {
   const [assets, setAssets] = useState({ images: [], sounds: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -170,12 +170,24 @@ function MediaExplorer({ gameName, isLocked, refreshToken }) {
                   form.append('game_name', gameName);
                   form.append('old_name', previewItem.name);
                   form.append('file', file);
-                  form.append('type', previewItem.type); // 서버는 typ 필드 기대
+                  // 서버 호환: 일부 서버는 'typ'을, 일부는 'type'을 기대할 수 있음 → 둘 다 전송
+                  form.append('typ', previewItem.type);
+                  form.append('type', previewItem.type);
                   await axios.post('/replace-asset', form);
                   await fetchAssets();
                   const newStamp = Date.now();
                   setAssetStamp(newStamp);
                   setPreviewItem((cur) => cur ? { ...cur, url: `${cur.url.split('?')[0]}?v=${newStamp}` } : cur);
+                  // 에셋 교체로 버전이 증가하므로 스냅샷 로그 갱신
+                  try {
+                    if (onSnapshotUpdate) {
+                      const snapRes = await axios.get('/snapshot-log', { params: { game_name: gameName || '' } });
+                      const data = snapRes?.data;
+                      if (data) onSnapshotUpdate(data);
+                    }
+                  } catch (snapErr) {
+                    console.error('Failed to refresh snapshot-log after asset replace:', snapErr);
+                  }
                 } catch (err) {
                   console.error('replace-asset failed:', err);
                   alert('업로드 중 오류가 발생했습니다.');

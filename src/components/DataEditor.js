@@ -209,7 +209,7 @@ function DataEditor({ data, onDataChange, showImportExport = true, gameName, onS
   return (
     <div className="data-editor-container">
       <div className="data-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <h2 style={{ margin: 0 }}>게임 데이터 편집</h2>
+        <h2 style={{ margin: 0 }}>게임 설정 편집</h2>
         <div className="data-editor-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {showImportExport && (
             <>

@@ -276,7 +276,7 @@ function App() {
               onClick={() => setActiveTab('data')}
               className={`tab-button ${activeTab === 'data' ? 'active' : ''}`}
             >
-              게임 데이터
+              게임 설정
             </button>
             <button 
               onClick={() => setActiveTab('snapshots')}
@@ -346,7 +346,12 @@ function App() {
             className="data-section"
             style={{ display: activeTab === 'media' ? 'block' : 'none', height: '100%' }}
           >
-            <MediaExplorer gameName={gameName} isLocked={isGameNameLocked} refreshToken={assetRefreshToken} />
+            <MediaExplorer
+              gameName={gameName}
+              isLocked={isGameNameLocked}
+              refreshToken={assetRefreshToken}
+              onSnapshotUpdate={handleSnapshotUpdate}
+            />
           </div>
         </div>
       </main>
