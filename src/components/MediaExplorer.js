@@ -4,25 +4,31 @@ import './MediaExplorer.css';
 
 /*
   MediaExplorer
-  - 서버에서 이미지/오디오 자산 목록을 불러와 그리드 썸네일로 표시
-  - 이미지 클릭: 큰 미리보기 모달 표시
-  - 오디오 클릭: 카드 내 오디오 플레이어 표시
+  - FastAPI 보안 정책 반영: 각 게임의 최상위 폴더 아래 단일 'assets' 하위 폴더만 접근 허용.
+    (ex) /static/{game_name}/assets/파일명
+  - 서버는 /assets?game_name=... 호출 시 파일 확장자로 이미지/사운드를 분류하여
+    { images: [{ name, url }], sounds: [{ name, url }] } 형태로 응답.
+  - 프론트는 해당 url 그대로 사용 (상대경로이므로 CRA proxy 설정을 통해 8000 포트로 전달).
+  - 이미지 클릭: 미리보기 모달, 사운드: 오디오 컨트롤 재생.
 
-  예상 API (조정 가능):
-  GET /assets?game_name=... -> {
-    images: [{ name, url }...],
-    sounds: [{ name, url }...]
-  }
+  API 응답 예:
+    GET /assets?game_name=alp_game
+    {
+      "images": [ { "name": "bg.png", "url": "/static/alp_game/assets/bg.png" } ],
+      "sounds": [ { "name": "bgm.mp3", "url": "/static/alp_game/assets/bgm.mp3" } ]
+    }
+
+  참고: 파일 변경 후 최신 썸네일을 강제로 갱신하고 싶으면 timestamp 쿼리를 추가해 캐시를 회피.
 */
 
-function MediaExplorer({ gameName }) {
+function MediaExplorer({ gameName, isLocked, refreshToken }) {
   const [assets, setAssets] = useState({ images: [], sounds: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
   const fetchAssets = async () => {
-    if (!gameName || !gameName.trim()) {
+    if (!isLocked || !gameName || !gameName.trim()) {
       setAssets({ images: [], sounds: [] });
       return;
     }
@@ -45,21 +51,22 @@ function MediaExplorer({ gameName }) {
     }
   };
 
+  // gameName 확정 후 또는 스냅샷 갱신(refreshToken 변화) 시에만 로드
   useEffect(() => {
     fetchAssets();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameName]);
+  }, [refreshToken]);
 
   return (
     <div className="media-explorer">
       <div className="media-header">
         <h2>에셋 보기</h2>
-        <button onClick={fetchAssets} disabled={loading || !gameName?.trim()}>
+        <button onClick={fetchAssets} disabled={loading || !isLocked || !gameName?.trim()}>
           {loading ? '새로고침 중…' : '새로고침'}
         </button>
       </div>
-      {!gameName?.trim() && (
-        <div className="media-hint">게임 이름을 확정하면 자산을 불러올 수 있어요.</div>
+      {!isLocked && (
+        <div className="media-hint">게임 이름을 확정하면 에셋을 불러옵니다.</div>
       )}
       {error && <div className="media-error">{error}</div>}
 
@@ -83,7 +90,7 @@ function MediaExplorer({ gameName }) {
             {assets.sounds.length === 0 && <div className="empty">사운드가 없습니다.</div>}
             {assets.sounds.map((snd, i) => (
               <div key={i} className="thumb-card" title={snd.name}>
-                <div className="thumb thumb-audio" onClick={(e) => e.currentTarget.nextSibling?.querySelector('audio')?.play()}>
+                <div className="thumb thumb-audio" onClick={(e) => e.currentTarget.parentElement?.querySelector('audio')?.play()}>
                   <span className="audio-icon">🔊</span>
                 </div>
                 <div className="thumb-name" title={snd.name}>{snd.name}</div>

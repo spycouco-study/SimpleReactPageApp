@@ -19,6 +19,7 @@ function App() {
   const [snapshotData, setSnapshotData] = useState(null); // 스냅샷 데이터 상태
   const [dataEditorData, setDataEditorData] = useState({}); // 데이터 편집기 상태
   const [loadedChat, setLoadedChat] = useState(null); // 서버에서 불러온 채팅 내역
+  const [assetRefreshToken, setAssetRefreshToken] = useState(0); // 미디어 자산 갱신 트리거
 
   const handleMarkdownUpdate = (content) => {
     setMarkdownContent(content);
@@ -27,6 +28,8 @@ function App() {
     // 유효성 간단 체크: versions 배열 존재 여부
     if (json && Array.isArray(json.versions)) {
       setSnapshotData(json);
+      // 스냅샷이 갱신될 때만 미디어 갱신 토큰 증가
+      setAssetRefreshToken(t => t + 1);
     } else {
       console.warn('Invalid snapshot data, expected { versions: [...] }');
     }
@@ -46,6 +49,8 @@ function App() {
   if (!isGameNameLocked) {
       if (gameName.trim() === '') return; // 버튼 disabled 조건과 동일한 가드
       setIsGameNameLocked(true);
+      // 게임 이름 확정 시 미디어도 초기 로드 필요 -> 토큰 증가
+      setAssetRefreshToken(t => t + 1);
       try {
         const query = new URLSearchParams({ game_name: gameName.trim() }).toString();
         const res = await fetch(`/game_data?${query}`, {
@@ -339,7 +344,7 @@ function App() {
           {/* 미디어 탭 */}
           {activeTab === 'media' && (
             <div className="data-section">
-              <MediaExplorer gameName={gameName} />
+              <MediaExplorer gameName={gameName} isLocked={isGameNameLocked} refreshToken={assetRefreshToken} />
             </div>
           )}
         </div>
