@@ -285,16 +285,16 @@ function App() {
               버전 관리
             </button>
             <button 
-              onClick={() => setActiveTab('boundingBox')}
-              className={`tab-button ${activeTab === 'boundingBox' ? 'active' : ''}`}
-            >
-              바운딩 박스
-            </button>
-            <button 
               onClick={() => setActiveTab('media')}
               className={`tab-button ${activeTab === 'media' ? 'active' : ''}`}
             >
               에셋
+            </button>
+            <button 
+              onClick={() => setActiveTab('boundingBox')}
+              className={`tab-button ${activeTab === 'boundingBox' ? 'active' : ''}`}
+            >
+              바운딩 박스
             </button>
           </div>
 
