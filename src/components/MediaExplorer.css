@@ -1,0 +1,130 @@
+/* MediaExplorer Styles */
+.media-explorer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  height: 100%;
+  overflow: hidden;
+}
+
+.media-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.media-hint {
+  color: #666;
+  font-size: 14px;
+}
+
+.media-error {
+  color: #b00020;
+  background: #ffd6d6;
+  border: 1px solid #ffb3b3;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.media-sections {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  overflow: auto;
+}
+
+.media-section h3 {
+  margin: 0 0 8px 0;
+}
+
+.thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.thumb-card {
+  background: #f7f8fa;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.thumb-card:hover { 
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.thumb-image { background-color: #fff; }
+
+.thumb-audio {
+  background: linear-gradient(135deg, #e0f2fe, #fef3c7);
+  font-size: 28px;
+}
+
+.audio-icon { font-size: 28px; }
+
+.thumb-name {
+  font-size: 12px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audio-player audio {
+  width: 100%;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-body {
+  background: white;
+  padding: 12px;
+  border-radius: 10px;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-body img {
+  max-width: 80vw;
+  max-height: 75vh;
+  object-fit: contain;
+}
+
+.modal-body .close {
+  align-self: flex-end;
+  padding: 6px 10px;
+}
