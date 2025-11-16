@@ -358,10 +358,10 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
             <button className="st-detail-close" onClick={() => setSelected(null)}>닫기</button>
           </div>
           <div className="st-detail-body">
+            <div><b>요청:</b> {selected.summary || '(요약 없음)'}</div>
             <div><b>버전:</b> {selected.version}</div>
             <div><b>부모:</b> {selected.parent ?? '(없음)'}</div>
             <div><b>시간:</b> {(() => { try { const d = new Date(selected.timestamp); return d.toLocaleString(); } catch { return selected.timestamp; } })()}</div>
-            <div><b>요약:</b> {selected.summary || '(요약 없음)'}</div>
             <div><b>현재 여부:</b> {selected.is_current ? 'true' : 'false'}</div>
             <div style={{ marginTop: 12 }}>
               <button
