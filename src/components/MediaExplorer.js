@@ -23,7 +23,7 @@ import './MediaExplorer.css';
 
 function MediaExplorer({ gameName, isLocked, refreshToken, onSnapshotUpdate }) {
   const [assets, setAssets] = useState({ images: [], sounds: [] });
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false); // internal fetch state only (no UI binding)
   const [error, setError] = useState(null);
   const [previewItem, setPreviewItem] = useState(null); // { type: 'image'|'sound', url, name }
   const didFetchRef = useRef(false);
@@ -38,7 +38,7 @@ function MediaExplorer({ gameName, isLocked, refreshToken, onSnapshotUpdate }) {
       return;
     }
     try {
-      setLoading(true);
+  setLoading(true);
       setError(null);
       const res = await axios.get('/assets', {
         params: { game_name: gameName, _t: Date.now() },
@@ -53,7 +53,7 @@ function MediaExplorer({ gameName, isLocked, refreshToken, onSnapshotUpdate }) {
       console.error('Failed to fetch assets:', err);
       setError('자산 목록을 불러오지 못했습니다.');
     } finally {
-      setLoading(false);
+  setLoading(false);
     }
   };
 
@@ -76,9 +76,6 @@ function MediaExplorer({ gameName, isLocked, refreshToken, onSnapshotUpdate }) {
     <div className="media-explorer">
       <div className="media-header">
         <h2>에셋 보기</h2>
-        <button onClick={fetchAssets} disabled={loading || !isLocked || !gameName?.trim()}>
-          {loading ? '새로고침 중…' : '새로고침'}
-        </button>
       </div>
       {!isLocked && (
         <div className="media-hint">게임 이름을 확정하면 에셋을 불러옵니다.</div>

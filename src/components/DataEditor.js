@@ -133,7 +133,7 @@ const NodeEditor = ({ path, value, onChange, depth = 0, label, hiddenTopLevelKey
 function DataEditor({ data, onDataChange, showImportExport = true, gameName, onSnapshotUpdate, hiddenTopLevelKeys = [] }) {
   const fileInputRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  // JSON 미리보기 기능 비활성화 (상태 제거)
 
   const setValueAtPath = (path, newVal) => {
     onDataChange(prev => {
@@ -224,9 +224,7 @@ function DataEditor({ data, onDataChange, showImportExport = true, gameName, onS
               />
             </>
           )}
-          <button onClick={() => setShowPreview(v => !v)}>
-            {showPreview ? 'JSON 미리보기 숨기기' : 'JSON 미리보기'}
-          </button>
+          {/* JSON 미리보기 토글 버튼 숨김 */}
           <button onClick={handleSave} disabled={isSaving || !gameName?.trim()} title={!gameName?.trim() ? '게임 이름이 필요합니다' : '현재 데이터 저장'}>
             {isSaving ? '저장 중…' : '변경 내용 저장'}
           </button>
@@ -235,12 +233,7 @@ function DataEditor({ data, onDataChange, showImportExport = true, gameName, onS
     <div className="hierarchy-editor">
   <NodeEditor path={[]} value={data} onChange={setValueAtPath} depth={0} hiddenTopLevelKeys={hiddenTopLevelKeys} />
       </div>
-      {showPreview && (
-        <div className="data-editor-preview">
-          <h3>미리보기 JSON</h3>
-          <pre>{JSON.stringify(buildObject(), null, 2)}</pre>
-        </div>
-      )}
+  {/* JSON 미리보기 영역 숨김 */}
     </div>
   );
 }
