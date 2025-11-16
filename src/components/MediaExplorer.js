@@ -25,7 +25,7 @@ function MediaExplorer({ gameName, isLocked, refreshToken }) {
   const [assets, setAssets] = useState({ images: [], sounds: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewItem, setPreviewItem] = useState(null); // { type: 'image'|'sound', url, name }
   const didFetchRef = useRef(false);
   const lastTokenRef = useRef(refreshToken);
   const [assetStamp, setAssetStamp] = useState(0); // 캐시 무효화용 스탬프
@@ -91,7 +91,7 @@ function MediaExplorer({ gameName, isLocked, refreshToken }) {
             {assets.images.map((img, i) => {
               const stampedUrl = assetStamp ? `${img.url}?v=${assetStamp}` : img.url;
               return (
-              <div key={i} className="thumb-card" title={img.name} onClick={() => setPreviewUrl(stampedUrl)}>
+              <div key={i} className="thumb-card" title={img.name} onClick={() => setPreviewItem({ type: 'image', url: stampedUrl, name: img.name })}>
                 <div className="thumb thumb-image" style={{ backgroundImage: `url(${stampedUrl})` }} />
                 <div className="thumb-name" title={img.name}>{img.name}</div>
               </div>
@@ -106,25 +106,30 @@ function MediaExplorer({ gameName, isLocked, refreshToken }) {
             {assets.sounds.map((snd, i) => {
               const stampedUrl = assetStamp ? `${snd.url}?v=${assetStamp}` : snd.url;
               return (
-              <div key={i} className="thumb-card" title={snd.name}>
-                <div className="thumb thumb-audio" onClick={(e) => e.currentTarget.parentElement?.querySelector('audio')?.play()}>
+              <div key={i} className="thumb-card" title={snd.name} onClick={() => setPreviewItem({ type: 'sound', url: stampedUrl, name: snd.name })}>
+                <div className="thumb thumb-audio">
                   <span className="audio-icon">🔊</span>
                 </div>
                 <div className="thumb-name" title={snd.name}>{snd.name}</div>
-                <div className="audio-player">
-                  <audio controls preload="none" src={stampedUrl} />
-                </div>
               </div>
             );})}
           </div>
         </section>
       </div>
 
-      {previewUrl && (
-        <div className="modal" onClick={() => setPreviewUrl(null)}>
-          <div className="modal-body" onClick={(e) => e.stopPropagation()}>
-            <img src={previewUrl} alt="preview" />
-            <button className="close" onClick={() => setPreviewUrl(null)}>닫기</button>
+      {previewItem && (
+        <div className="modal" onClick={() => setPreviewItem(null)}>
+          <div className={`modal-body ${previewItem.type === 'sound' ? 'sound-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <strong>{previewItem.name}</strong>
+              <button className="close" onClick={() => setPreviewItem(null)}>닫기</button>
+            </div>
+            {previewItem.type === 'image' && (
+              <img src={previewItem.url} alt={previewItem.name} />
+            )}
+            {previewItem.type === 'sound' && (
+              <audio autoPlay controls src={previewItem.url} style={{ width: '100%', marginTop: '16px' }} />
+            )}
           </div>
         </div>
       )}

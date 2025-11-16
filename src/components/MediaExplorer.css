@@ -31,10 +31,11 @@
 }
 
 .media-sections {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .media-section h3 {
@@ -43,20 +44,20 @@
 
 .thumb-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
 }
 
 .thumb-card {
   background: #f7f8fa;
   border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 8px;
+  padding: 6px 6px 8px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  transition: transform .15s ease, box-shadow .15s ease;
+  transition: transform .12s ease, box-shadow .12s ease;
 }
 
 .thumb-card:hover { 
@@ -67,25 +68,26 @@
 .thumb {
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 8px;
+  border-radius: 6px;
   background-size: cover;
   background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04);
 }
 
 .thumb-image { background-color: #fff; }
 
 .thumb-audio {
   background: linear-gradient(135deg, #e0f2fe, #fef3c7);
-  font-size: 28px;
+  font-size: 22px;
 }
 
-.audio-icon { font-size: 28px; }
+.audio-icon { font-size: 22px; }
 
 .thumb-name {
-  font-size: 12px;
+  font-size: 11px;
   color: #333;
   white-space: nowrap;
   overflow: hidden;
@@ -116,6 +118,27 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* 사운드 모달 확장: 더 넓고 높게 중앙 배치 */
+.modal-body.sound-modal {
+  padding: 40px;
+  width: 40vw;
+  max-width: 90vw;
+  height: 40vh;
+  max-height: 75vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.modal-body.sound-modal strong {
+  font-size: 1.1rem;
+}
+
+.modal-body.sound-modal audio {
+  height: 90px;
+  transform: scale(1.08);
 }
 
 .modal-body img {
