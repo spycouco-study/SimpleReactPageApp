@@ -74,9 +74,9 @@ function MediaExplorer({ gameName, isLocked, refreshToken, onSnapshotUpdate }) {
 
   return (
     <div className="media-explorer">
-      <div className="media-header">
+      {/* <div className="media-header">
         <h2>에셋 보기</h2>
-      </div>
+      </div> */}
       {!isLocked && (
         <div className="media-hint">게임 이름을 확정하면 에셋을 불러옵니다.</div>
       )}

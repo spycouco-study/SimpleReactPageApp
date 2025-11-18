@@ -120,6 +120,8 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
   const [scale, setScale] = useState(1);
   const scaleRef = useRef(1);
   const wasDraggingRef = useRef(false);
+  const isDraggingRef = useRef(false);
+  const lastPosRef = useRef({ x: 0, y: 0 });
 
   const MIN_SCALE = 0.7;
   const MAX_SCALE = 2.5;
@@ -183,78 +185,67 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
     });
   }, [nodes, scale]);
 
-  // 드래그 패닝 + Ctrl+휠 줌
+  // 드래그 패닝 관련 전역(mousemove/mouseup) 리스너 등록
   useEffect(() => {
-    const el = wrapRef.current;
-    if (!el) return;
-
-    let isDown = false;
-    let startX = 0, startY = 0;
-    let lastX = 0, lastY = 0;
-
-    const onMouseDown = (e) => {
-      if (e.button !== 0) return; // 좌클릭만
-      isDown = true;
-      startX = e.clientX; startY = e.clientY;
-      lastX = e.clientX; lastY = e.clientY;
-      el.classList.add('dragging');
-      // 텍스트 선택 방지
-      e.preventDefault();
-    };
-    const onMouseMove = (e) => {
-      if (!isDown) return;
-      const dx = e.clientX - lastX;
-      const dy = e.clientY - lastY;
-      if (Math.abs(e.clientX - startX) + Math.abs(e.clientY - startY) > 3) {
+    const handleMove = (e) => {
+      if (!isDraggingRef.current) return;
+      const el = wrapRef.current;
+      if (!el) return;
+      const dx = e.clientX - lastPosRef.current.x;
+      const dy = e.clientY - lastPosRef.current.y;
+      if (Math.abs(dx) + Math.abs(dy) > 3) {
         wasDraggingRef.current = true;
       }
       el.scrollLeft -= dx;
       el.scrollTop -= dy;
-      lastX = e.clientX; lastY = e.clientY;
+      lastPosRef.current = { x: e.clientX, y: e.clientY };
     };
-    const endDrag = () => {
-      if (!isDown) return;
-      isDown = false;
-      el.classList.remove('dragging');
-      // 클릭과 구분되도록 잠깐 뒤에 해제
+    const handleUp = () => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      const el = wrapRef.current;
+      if (el) el.classList.remove('dragging');
       setTimeout(() => { wasDraggingRef.current = false; }, 50);
     };
-
-    const onWheel = (e) => {
-      if (!e.ctrlKey) return; // 일반 스크롤은 통과
-      e.preventDefault();
-      const rect = el.getBoundingClientRect();
-      const mouseXInView = e.clientX - rect.left;
-      const mouseYInView = e.clientY - rect.top;
-      const preContentX = (el.scrollLeft + mouseXInView) / scaleRef.current;
-      const preContentY = (el.scrollTop + mouseYInView) / scaleRef.current;
-
-      const direction = e.deltaY < 0 ? 1 : -1; // 위로 굴리면 확대
-      const factor = direction > 0 ? 1.1 : 0.9;
-      const next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scaleRef.current * factor));
-      if (next === scaleRef.current) return;
-      setScale(next);
-
-      // 포인터 고정 줌: 포인터 위치가 가리키던 콘텐츠 좌표 유지
-      // 다음 프레임에 스크롤 보정
-      requestAnimationFrame(() => {
-        el.scrollLeft = preContentX * next - mouseXInView;
-        el.scrollTop = preContentY * next - mouseYInView;
-      });
-    };
-
-    el.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', endDrag);
-    el.addEventListener('wheel', onWheel, { passive: false });
-
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
     return () => {
-      el.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', endDrag);
-      el.removeEventListener('wheel', onWheel);
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
     };
   }, []);
+
+  const beginDrag = (e) => {
+    if (e.button !== 0) return;
+    const el = wrapRef.current;
+    if (!el) return;
+    isDraggingRef.current = true;
+    lastPosRef.current = { x: e.clientX, y: e.clientY };
+    el.classList.add('dragging');
+    e.preventDefault();
+  };
+
+  const handleWheel = (e) => {
+    // Ctrl+휠 또는 Meta+휠(맥)로 확대/축소
+    if (!e.ctrlKey && !e.metaKey) return;
+    const el = wrapRef.current;
+    if (!el) return;
+    e.preventDefault();
+    const rect = el.getBoundingClientRect();
+    const mouseXInView = e.clientX - rect.left;
+    const mouseYInView = e.clientY - rect.top;
+    const preContentX = (el.scrollLeft + mouseXInView) / scaleRef.current;
+    const preContentY = (el.scrollTop + mouseYInView) / scaleRef.current;
+    const direction = e.deltaY < 0 ? 1 : -1;
+    const factor = direction > 0 ? 1.1 : 0.9;
+    const next = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scaleRef.current * factor));
+    if (next === scaleRef.current) return;
+    setScale(next);
+    requestAnimationFrame(() => {
+      el.scrollLeft = preContentX * next - mouseXInView;
+      el.scrollTop = preContentY * next - mouseYInView;
+    });
+  };
 
   const handleFile = (e) => {
     const file = e.target.files?.[0];
@@ -322,7 +313,7 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
           )}
         </div>
       )}
-  <div className="st-graph-wrap" ref={wrapRef}>
+  <div className="st-graph-wrap" ref={wrapRef} onMouseDown={beginDrag} onWheel={handleWheel}>
   <div className="st-canvas" style={{ width: width, height: height, transform: `scale(${scale})`, transformOrigin: '0 0' }}>
   <svg width={width} height={height}>
         <g className="st-edges">
@@ -336,6 +327,9 @@ export default function SnapshotTree({ data = DEFAULT_SNAPSHOTS, gameName, onSna
         </g>
         <g className="st-nodes">
           {nodes.map((n) => {
+                  <div style={{ marginBottom: 8, fontSize: 11, color: '#555' }}>
+                    드래그로 이동 / Ctrl+휠로 확대·축소 (배율 {scale.toFixed(2)}x)
+                  </div>
             const baseCircleClass = `st-node ${n.is_current ? 'current' : ''} ${(!n.is_current && n.is_latest) ? 'latest' : ''}`.trim();
             return (
               <g key={n.version} className="st-node-g" transform={`translate(${n.x}, ${n.y})`} onClick={() => { if (!wasDraggingRef.current) setSelected(n); }}>

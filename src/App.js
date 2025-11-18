@@ -336,7 +336,6 @@ function App() {
           {/* 스냅샷 트리 탭 */}
           {activeTab === 'snapshots' && (
             <div className="snapshot-section" style={{ flex: 1 }}>
-              <h2>프로젝트 스냅샷 트리</h2>
               <SnapshotTree data={snapshotData || undefined} gameName={gameName} onSnapshotUpdate={handleSnapshotUpdate} onGameDataUpdate={setDataEditorData} showImportExport={false} />
             </div>
           )}
