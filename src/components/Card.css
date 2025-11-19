@@ -1,0 +1,13 @@
+.card {
+    width: 250px;
+    border: 1px solid #ccc;
+}
+
+.img-wrapper {
+                height: 140px;
+
+}
+
+.name {
+    text-align: center;
+}
