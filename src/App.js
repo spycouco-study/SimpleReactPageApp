@@ -328,7 +328,7 @@ function App() {
                 activeTab === "boundingBox" ? "active" : ""
               }`}
             >
-              게임 미리보기
+              바운딩 박스
             </button>
           </div>
 
