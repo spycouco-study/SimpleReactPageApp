@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./App.css";
 import ChatBot from "./components/ChatBot";
 import ChatBot2 from "./components/ChatBot2";
@@ -8,6 +8,8 @@ import DataEditor from "./components/DataEditor";
 import SnapshotTree from "./components/SnapshotTree";
 import axios from "axios";
 import MediaExplorer from "./components/MediaExplorer";
+import GameIframe from "./components/GameIframe";
+import GameEmbed from "./components/GameEmbed";
 
 function App() {
   const [markdownContent, setMarkdownContent] = useState(""); //('# Alparka 놀이공원 기획서\n\n[기획서 내용]');
@@ -20,6 +22,24 @@ function App() {
   const [dataEditorData, setDataEditorData] = useState({}); // 데이터 편집기 상태
   const [loadedChat, setLoadedChat] = useState(null); // 서버에서 불러온 채팅 내역
   const [assetRefreshToken, setAssetRefreshToken] = useState(0); // 미디어 자산 갱신 트리거
+  const [scriptUrl, setScriptUrl] = useState("/game_folder/index.html"); // iframe으로 로드할 게임 URL
+  const [reloadToken, setReloadToken] = useState(0); // iframe 재로딩 트리거
+  const [embedScriptUrl, setEmbedScriptUrl] = useState("/game_folder/game.js"); // GameEmbed용 스크립트 URL
+  const [embedReloadToken, setEmbedReloadToken] = useState(0); // GameEmbed 재실행 트리거
+
+  // 게임 이름이 변경되고 잠금되지 않았을 때 기본 게임 URL을 동기화
+  useEffect(() => {
+    if (!isGameNameLocked) {
+      const trimmed = (gameName || "").trim();
+      if (trimmed) {
+        setScriptUrl(`/games/${encodeURIComponent(trimmed)}/index.html`);
+        setEmbedScriptUrl(`/games/${encodeURIComponent(trimmed)}/game.js`);
+      } else {
+        setScriptUrl("/game_folder/index.html");
+        setEmbedScriptUrl("/game_folder/game.js");
+      }
+    }
+  }, [gameName, isGameNameLocked]);
 
   const handleMarkdownUpdate = (content) => {
     setMarkdownContent(content);
@@ -181,6 +201,7 @@ function App() {
   };
 
   const renderMarkdownSection = () => {
+    // 문서 보기/편집만 제공 (게임은 별도 상위 탭)
     if (isEditing) {
       return (
         <>
@@ -193,16 +214,15 @@ function App() {
           />
         </>
       );
-    } else {
-      return (
-        <>
-          <h2>기획서 미리보기 (보기 모드)</h2>
-          <div className="markdown-viewer">
-            <ReactMarkdown>{markdownContent}</ReactMarkdown>
-          </div>
-        </>
-      );
     }
+    return (
+      <>
+        <h2>기획서 미리보기 (보기 모드)</h2>
+        <div className="markdown-viewer">
+          <ReactMarkdown>{markdownContent}</ReactMarkdown>
+        </div>
+      </>
+    );
   };
 
   return (
@@ -303,6 +323,20 @@ function App() {
               기획서
             </button>
             <button
+              onClick={() => setActiveTab("game")}
+              className={`tab-button ${activeTab === "game" ? "active" : ""}`}
+            >
+              게임
+            </button>
+            <button
+              onClick={() => setActiveTab("game-embed")}
+              className={`tab-button ${
+                activeTab === "game-embed" ? "active" : ""
+              }`}
+            >
+              게임(Embed)
+            </button>
+            <button
               onClick={() => setActiveTab("data")}
               className={`tab-button ${activeTab === "data" ? "active" : ""}`}
             >
@@ -347,6 +381,77 @@ function App() {
                 {isEditing ? "👀 미리보기 모드로 전환" : "✍️ 편집 모드로 전환"}
               </button>
               {renderMarkdownSection()}
+            </div>
+          )}
+
+          {/* 게임 탭 */}
+          {activeTab === "game" && (
+            <div className="data-section" style={{ height: "100%" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <label style={{ whiteSpace: "nowrap" }}>게임 URL</label>
+                <input
+                  type="text"
+                  value={scriptUrl}
+                  onChange={(e) => setScriptUrl(e.target.value)}
+                  style={{ flex: 1, padding: "6px 10px", fontSize: 14 }}
+                  placeholder="/game_folder/index.html 또는 서버 경로"
+                />
+                <button
+                  onClick={() => setReloadToken((k) => k + 1)}
+                  style={{ padding: "6px 12px" }}
+                >
+                  새로고침
+                </button>
+              </div>
+              <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+                <GameIframe src={scriptUrl} reloadToken={reloadToken} />
+              </div>
+            </div>
+          )}
+
+          {/* 게임(Embed) 탭 - game.js만 로드하여 캔버스에서 실행 */}
+          {activeTab === "game-embed" && (
+            <div className="data-section" style={{ height: "100%" }}>
+              <h2>게임 미리보기 (Embed)</h2>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center",
+                  marginBottom: 10,
+                }}
+              >
+                <label style={{ whiteSpace: "nowrap" }}>스크립트 URL</label>
+                <input
+                  type="text"
+                  value={embedScriptUrl}
+                  onChange={(e) => setEmbedScriptUrl(e.target.value)}
+                  style={{ flex: 1, padding: "6px 10px", fontSize: 14 }}
+                  placeholder="/game_folder/game.js 또는 서버 경로"
+                />
+                <button
+                  onClick={() => setEmbedReloadToken((k) => k + 1)}
+                  style={{ padding: "6px 12px" }}
+                >
+                  새로고침
+                </button>
+              </div>
+              <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+                <GameEmbed
+                  scriptUrl={embedScriptUrl}
+                  isModule={true}
+                  width={1080}
+                  height={720}
+                  reloadToken={embedReloadToken}
+                />
+              </div>
             </div>
           )}
 
