@@ -46,12 +46,29 @@ function ChatBot({
       };
       setMessages((prev) => [...prev, errorMessage]);
 
+      // FastAPI 서버로 에러 전송
+      axios.post('http://localhost:8000/client-error', {
+        type: "error-batch",
+        game_name: gameName || "",
+        game_version: "1.0.1",
+        collected_at: new Date().toISOString(),
+        error_count: gameErrorBatch.error_count || 0,
+        error_report: gameErrorBatch.error_report || "",
+        errors: [],
+      })
+      .then((response) => {
+        console.log("✅ FastAPI 서버로 에러 전송 성공:", response.data);
+      })
+      .catch((error) => {
+        console.error("❌ FastAPI 서버로 에러 전송 실패:", error);
+      });
+
       // 에러 처리 완료 알림
       if (typeof onErrorBatchHandled === "function") {
         onErrorBatchHandled();
       }
     }
-  }, [gameErrorBatch, onErrorBatchHandled]);
+  }, [gameErrorBatch, onErrorBatchHandled, gameName]);
 
   // 공통: 스냅샷 로그 및 게임 데이터 최신화
   const refreshSnapshotAndGameData = async () => {
