@@ -26,6 +26,12 @@ function App() {
   const [reloadToken, setReloadToken] = useState(0); // iframe 재로딩 트리거
   const [embedScriptUrl, setEmbedScriptUrl] = useState("/game_folder/game.js"); // GameEmbed용 스크립트 URL
   const [embedReloadToken, setEmbedReloadToken] = useState(0); // GameEmbed 재실행 트리거
+  const [gameErrorBatch, setGameErrorBatch] = useState(null); // 게임 에러 배치 데이터
+
+  // 게임 에러 배치 핸들러
+  const handleGameErrorBatch = (batchData) => {
+    setGameErrorBatch(batchData);
+  };
 
   // 게임 이름이 변경되고 잠금되지 않았을 때 기본 게임 URL을 동기화
   useEffect(() => {
@@ -69,6 +75,9 @@ function App() {
     if (!isGameNameLocked) {
       if (gameName.trim() === "") return; // 버튼 disabled 조건과 동일한 가드
       setIsGameNameLocked(true);
+      // 게임 이름 확정 시 게임 불러오기
+      setScriptUrl(`http://localhost:8080/${gameName.trim()}`);
+      setReloadToken((k) => k + 1);
       // 게임 이름 확정 시 미디어도 초기 로드 필요 -> 토큰 증가
       setAssetRefreshToken((t) => t + 1);
       try {
@@ -292,6 +301,8 @@ function App() {
                 onGameDataUpdate={setDataEditorData}
                 loadedChat={loadedChat}
                 gameName={gameName}
+                gameErrorBatch={gameErrorBatch}
+                onErrorBatchHandled={() => setGameErrorBatch(null)}
               />
             </div>
             <div
@@ -387,32 +398,47 @@ function App() {
           {/* 게임 탭 */}
           {activeTab === "game" && (
             <div className="data-section" style={{ height: "100%" }}>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "center",
-                  marginBottom: 10,
-                }}
-              >
-                <label style={{ whiteSpace: "nowrap" }}>게임 URL</label>
-                <input
-                  type="text"
-                  value={scriptUrl}
-                  onChange={(e) => setScriptUrl(e.target.value)}
-                  style={{ flex: 1, padding: "6px 10px", fontSize: 14 }}
-                  placeholder="/game_folder/index.html 또는 서버 경로"
-                />
-                <button
-                  onClick={() => setReloadToken((k) => k + 1)}
-                  style={{ padding: "6px 12px" }}
+              {isGameNameLocked ? (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      alignItems: "center",
+                      marginBottom: 10,
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        setReloadToken((k) => k + 1);
+                      }}
+                      style={{ padding: "6px 12px" }}
+                    >
+                      새로고침
+                    </button>
+                  </div>
+                  <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+                    <GameIframe
+                      src={scriptUrl}
+                      reloadToken={reloadToken}
+                      onErrorBatch={handleGameErrorBatch}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div
+                  style={{
+                    flex: 1,
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    color: "#999",
+                    fontSize: "18px",
+                  }}
                 >
-                  새로고침
-                </button>
-              </div>
-              <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-                <GameIframe src={scriptUrl} reloadToken={reloadToken} />
-              </div>
+                  게임 이름을 입력하고 확인 버튼을 눌러주세요
+                </div>
+              )}
             </div>
           )}
 
