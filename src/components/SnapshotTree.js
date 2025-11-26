@@ -245,6 +245,40 @@ export default function SnapshotTree({
     };
   }, []);
 
+  // Ctrl+휠 확대/축소를 위한 wheel 이벤트 리스너 (passive: false로 설정)
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+
+    const handleWheel = (e) => {
+      // Ctrl+휠 또는 Meta+휠(맥)로 확대/축소
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const mouseXInView = e.clientX - rect.left;
+      const mouseYInView = e.clientY - rect.top;
+      const preContentX = (el.scrollLeft + mouseXInView) / scaleRef.current;
+      const preContentY = (el.scrollTop + mouseYInView) / scaleRef.current;
+      const direction = e.deltaY < 0 ? 1 : -1;
+      const factor = direction > 0 ? 1.1 : 0.9;
+      const next = Math.max(
+        MIN_SCALE,
+        Math.min(MAX_SCALE, scaleRef.current * factor)
+      );
+      if (next === scaleRef.current) return;
+      setScale(next);
+      requestAnimationFrame(() => {
+        el.scrollLeft = preContentX * next - mouseXInView;
+        el.scrollTop = preContentY * next - mouseYInView;
+      });
+    };
+
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
   const beginDrag = (e) => {
     if (e.button !== 0) return;
     const el = wrapRef.current;
@@ -253,31 +287,6 @@ export default function SnapshotTree({
     lastPosRef.current = { x: e.clientX, y: e.clientY };
     el.classList.add("dragging");
     e.preventDefault();
-  };
-
-  const handleWheel = (e) => {
-    // Ctrl+휠 또는 Meta+휠(맥)로 확대/축소
-    if (!e.ctrlKey && !e.metaKey) return;
-    const el = wrapRef.current;
-    if (!el) return;
-    e.preventDefault();
-    const rect = el.getBoundingClientRect();
-    const mouseXInView = e.clientX - rect.left;
-    const mouseYInView = e.clientY - rect.top;
-    const preContentX = (el.scrollLeft + mouseXInView) / scaleRef.current;
-    const preContentY = (el.scrollTop + mouseYInView) / scaleRef.current;
-    const direction = e.deltaY < 0 ? 1 : -1;
-    const factor = direction > 0 ? 1.1 : 0.9;
-    const next = Math.max(
-      MIN_SCALE,
-      Math.min(MAX_SCALE, scaleRef.current * factor)
-    );
-    if (next === scaleRef.current) return;
-    setScale(next);
-    requestAnimationFrame(() => {
-      el.scrollLeft = preContentX * next - mouseXInView;
-      el.scrollTop = preContentY * next - mouseYInView;
-    });
   };
 
   const handleFile = (e) => {
@@ -372,12 +381,7 @@ export default function SnapshotTree({
           )}
         </div>
       )}
-      <div
-        className="st-graph-wrap"
-        ref={wrapRef}
-        onMouseDown={beginDrag}
-        onWheel={handleWheel}
-      >
+      <div className="st-graph-wrap" ref={wrapRef} onMouseDown={beginDrag}>
         <div
           className="st-canvas"
           style={{
