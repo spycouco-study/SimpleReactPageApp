@@ -8,7 +8,6 @@ import DataEditor from "./components/DataEditor";
 import SnapshotTree from "./components/SnapshotTree";
 import MediaExplorer from "./components/MediaExplorer";
 import GameIframe from "./components/GameIframe";
-import GameEmbed from "./components/GameEmbed";
 import {
   getGameSpec,
   getGameData,
@@ -29,8 +28,6 @@ function App() {
   const [assetRefreshToken, setAssetRefreshToken] = useState(0); // 미디어 자산 갱신 트리거
   const [scriptUrl, setScriptUrl] = useState("/game_folder/index.html"); // iframe으로 로드할 게임 URL
   const [reloadToken, setReloadToken] = useState(0); // iframe 재로딩 트리거
-  const [embedScriptUrl, setEmbedScriptUrl] = useState("/game_folder/game.js"); // GameEmbed용 스크립트 URL
-  const [embedReloadToken, setEmbedReloadToken] = useState(0); // GameEmbed 재실행 트리거
   const [gameErrorBatch, setGameErrorBatch] = useState(null); // 게임 에러 배치 데이터
 
   // 게임 에러 배치 핸들러
@@ -44,10 +41,8 @@ function App() {
       const trimmed = (gameName || "").trim();
       if (trimmed) {
         setScriptUrl(`/games/${encodeURIComponent(trimmed)}/index.html`);
-        setEmbedScriptUrl(`/games/${encodeURIComponent(trimmed)}/game.js`);
       } else {
         setScriptUrl("/game_folder/index.html");
-        setEmbedScriptUrl("/game_folder/game.js");
       }
     }
   }, [gameName, isGameNameLocked]);
@@ -285,14 +280,6 @@ function App() {
               게임
             </button>
             <button
-              onClick={() => setActiveTab("game-embed")}
-              className={`tab-button ${
-                activeTab === "game-embed" ? "active" : ""
-              }`}
-            >
-              게임(Embed)
-            </button>
-            <button
               onClick={() => setActiveTab("data")}
               className={`tab-button ${activeTab === "data" ? "active" : ""}`}
             >
@@ -384,45 +371,6 @@ function App() {
                   게임 이름을 입력하고 확인 버튼을 눌러주세요
                 </div>
               )}
-            </div>
-          )}
-
-          {/* 게임(Embed) 탭 - game.js만 로드하여 캔버스에서 실행 */}
-          {activeTab === "game-embed" && (
-            <div className="data-section" style={{ height: "100%" }}>
-              <h2>게임 미리보기 (Embed)</h2>
-              <div
-                style={{
-                  display: "flex",
-                  gap: 8,
-                  alignItems: "center",
-                  marginBottom: 10,
-                }}
-              >
-                <label style={{ whiteSpace: "nowrap" }}>스크립트 URL</label>
-                <input
-                  type="text"
-                  value={embedScriptUrl}
-                  onChange={(e) => setEmbedScriptUrl(e.target.value)}
-                  style={{ flex: 1, padding: "6px 10px", fontSize: 14 }}
-                  placeholder="/game_folder/game.js 또는 서버 경로"
-                />
-                <button
-                  onClick={() => setEmbedReloadToken((k) => k + 1)}
-                  style={{ padding: "6px 12px" }}
-                >
-                  새로고침
-                </button>
-              </div>
-              <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-                <GameEmbed
-                  scriptUrl={embedScriptUrl}
-                  isModule={true}
-                  width={1080}
-                  height={720}
-                  reloadToken={embedReloadToken}
-                />
-              </div>
             </div>
           )}
 
