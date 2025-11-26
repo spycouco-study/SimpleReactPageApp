@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
-import axios from 'axios';
-import './DataEditor.css';
+import React, { useRef, useState } from "react";
+import "./DataEditor.css";
+import { updateGameData, getSnapshotLog } from "../api/backend";
 
 /*
   DataEditor: 간단한 key-value JSON 편집기
@@ -19,26 +19,51 @@ import './DataEditor.css';
 // leaf 판별은 직접 사용하지 않아 제거
 
 const classifyType = (val) => {
-  if (typeof val === 'boolean') return 'boolean';
-  if (typeof val === 'number') return 'number';
-  return 'string';
+  if (typeof val === "boolean") return "boolean";
+  if (typeof val === "number") return "number";
+  return "string";
 };
 
 // 재귀 편집 컴포넌트
-const depthColors = ['#e3f2fd', '#e8f5e9', '#fff3e0', '#f3e5f5'];
+const depthColors = ["#e3f2fd", "#e8f5e9", "#fff3e0", "#f3e5f5"];
 const getDepthStyle = (depth) => ({
   borderLeft: `4px solid ${depthColors[depth % depthColors.length]}`,
-  backgroundColor: depth % 2 === 0 ? '#fbfbfb' : '#ffffff'
+  backgroundColor: depth % 2 === 0 ? "#fbfbfb" : "#ffffff",
 });
 
 const CollapsibleNode = ({ label, typeLabel, depth, children }) => {
   const [open, setOpen] = useState(true);
   return (
-    <div className="collapsible-node" style={{ ...getDepthStyle(depth), padding: 8, borderRadius: 6, marginBottom: 8 }}>
-      <div className="node-header" onClick={() => setOpen(o => !o)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-        <span className="caret" style={{ width: 16 }}>{open ? '▼' : '▶'}</span>
-        <strong className="node-label" style={{ flex: 1 }}>{label}</strong>
-        {typeLabel && <span className="type-badge" style={{ fontSize: 12, color: '#555' }}>{typeLabel}</span>}
+    <div
+      className="collapsible-node"
+      style={{
+        ...getDepthStyle(depth),
+        padding: 8,
+        borderRadius: 6,
+        marginBottom: 8,
+      }}
+    >
+      <div
+        className="node-header"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          cursor: "pointer",
+        }}
+      >
+        <span className="caret" style={{ width: 16 }}>
+          {open ? "▼" : "▶"}
+        </span>
+        <strong className="node-label" style={{ flex: 1 }}>
+          {label}
+        </strong>
+        {typeLabel && (
+          <span className="type-badge" style={{ fontSize: 12, color: "#555" }}>
+            {typeLabel}
+          </span>
+        )}
       </div>
       {open && (
         <div className="node-body" style={{ marginTop: 8 }}>
@@ -49,28 +74,58 @@ const CollapsibleNode = ({ label, typeLabel, depth, children }) => {
   );
 };
 
-const NodeEditor = ({ path, value, onChange, depth = 0, label, hiddenTopLevelKeys = [] }) => {
+const NodeEditor = ({
+  path,
+  value,
+  onChange,
+  depth = 0,
+  label,
+  hiddenTopLevelKeys = [],
+}) => {
   // 객체
-  if (value && typeof value === 'object' && !Array.isArray(value)) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
     const allKeys = Object.keys(value);
-    const keys = (depth === 0 && hiddenTopLevelKeys && hiddenTopLevelKeys.length)
-      ? allKeys.filter(k => !hiddenTopLevelKeys.includes(k))
-      : allKeys;
+    const keys =
+      depth === 0 && hiddenTopLevelKeys && hiddenTopLevelKeys.length
+        ? allKeys.filter((k) => !hiddenTopLevelKeys.includes(k))
+        : allKeys;
     return (
       <div className="node object-node">
-        {keys.map(k => {
+        {keys.map((k) => {
           const child = value[k];
-          const isGroup = child && typeof child === 'object';
+          const isGroup = child && typeof child === "object";
           if (isGroup) {
             return (
-              <CollapsibleNode key={k} label={k} typeLabel={Array.isArray(child) ? `array(${child.length})` : 'object'} depth={depth}>
-                <NodeEditor path={[...path, k]} value={child} onChange={onChange} depth={depth + 1} label={k} hiddenTopLevelKeys={hiddenTopLevelKeys} />
+              <CollapsibleNode
+                key={k}
+                label={k}
+                typeLabel={
+                  Array.isArray(child) ? `array(${child.length})` : "object"
+                }
+                depth={depth}
+              >
+                <NodeEditor
+                  path={[...path, k]}
+                  value={child}
+                  onChange={onChange}
+                  depth={depth + 1}
+                  label={k}
+                  hiddenTopLevelKeys={hiddenTopLevelKeys}
+                />
               </CollapsibleNode>
             );
           }
           // leaf는 접기/펼치기 없이 바로 표시
           return (
-            <NodeEditor key={k} path={[...path, k]} value={child} onChange={onChange} depth={depth} label={k} hiddenTopLevelKeys={hiddenTopLevelKeys} />
+            <NodeEditor
+              key={k}
+              path={[...path, k]}
+              value={child}
+              onChange={onChange}
+              depth={depth}
+              label={k}
+              hiddenTopLevelKeys={hiddenTopLevelKeys}
+            />
           );
         })}
       </div>
@@ -78,20 +133,42 @@ const NodeEditor = ({ path, value, onChange, depth = 0, label, hiddenTopLevelKey
   }
   // 배열
   if (Array.isArray(value)) {
-  return (
+    return (
       <div className="node array-node">
         {value.map((item, idx) => {
-          const isGroup = item && typeof item === 'object';
+          const isGroup = item && typeof item === "object";
           if (isGroup) {
             return (
-              <CollapsibleNode key={idx} label={`[${idx}]`} typeLabel={Array.isArray(item) ? `array(${item.length})` : 'object'} depth={depth}>
-        <NodeEditor path={[...path, idx]} value={item} onChange={onChange} depth={depth + 1} label={`[${idx}]`} hiddenTopLevelKeys={hiddenTopLevelKeys} />
+              <CollapsibleNode
+                key={idx}
+                label={`[${idx}]`}
+                typeLabel={
+                  Array.isArray(item) ? `array(${item.length})` : "object"
+                }
+                depth={depth}
+              >
+                <NodeEditor
+                  path={[...path, idx]}
+                  value={item}
+                  onChange={onChange}
+                  depth={depth + 1}
+                  label={`[${idx}]`}
+                  hiddenTopLevelKeys={hiddenTopLevelKeys}
+                />
               </CollapsibleNode>
             );
           }
           // leaf는 접기/펼치기 없이 바로 표시
           return (
-      <NodeEditor key={idx} path={[...path, idx]} value={item} onChange={onChange} depth={depth} label={`[${idx}]`} hiddenTopLevelKeys={hiddenTopLevelKeys} />
+            <NodeEditor
+              key={idx}
+              path={[...path, idx]}
+              value={item}
+              onChange={onChange}
+              depth={depth}
+              label={`[${idx}]`}
+              hiddenTopLevelKeys={hiddenTopLevelKeys}
+            />
           );
         })}
       </div>
@@ -101,28 +178,41 @@ const NodeEditor = ({ path, value, onChange, depth = 0, label, hiddenTopLevelKey
   const type = classifyType(value);
   const handleValueChange = (raw) => {
     let newVal = raw;
-    if (type === 'number') {
-      newVal = raw === '' ? '' : Number(raw);
-    } else if (type === 'boolean') {
-      newVal = raw === 'true';
+    if (type === "number") {
+      newVal = raw === "" ? "" : Number(raw);
+    } else if (type === "boolean") {
+      newVal = raw === "true";
     }
     onChange(path, newVal);
   };
   return (
-    <div className="leaf-line" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 8, alignItems: 'center' }}>
-      <div className="leaf-key" style={{ color: '#333' }}>{label}</div>
+    <div
+      className="leaf-line"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 2fr",
+        gap: 8,
+        alignItems: "center",
+      }}
+    >
+      <div className="leaf-key" style={{ color: "#333" }}>
+        {label}
+      </div>
       <div className="leaf-editor">
-        {type === 'boolean' ? (
-          <select value={String(value)} onChange={(e) => handleValueChange(e.target.value)}>
+        {type === "boolean" ? (
+          <select
+            value={String(value)}
+            onChange={(e) => handleValueChange(e.target.value)}
+          >
             <option value="true">true</option>
             <option value="false">false</option>
           </select>
         ) : (
           <input
-            type={type === 'number' ? 'number' : 'text'}
-            value={value === undefined || value === null ? '' : value}
+            type={type === "number" ? "number" : "text"}
+            value={value === undefined || value === null ? "" : value}
             onChange={(e) => handleValueChange(e.target.value)}
-            placeholder={type === 'number' ? '0' : 'value'}
+            placeholder={type === "number" ? "0" : "value"}
           />
         )}
       </div>
@@ -130,14 +220,21 @@ const NodeEditor = ({ path, value, onChange, depth = 0, label, hiddenTopLevelKey
   );
 };
 
-function DataEditor({ data, onDataChange, showImportExport = true, gameName, onSnapshotUpdate, hiddenTopLevelKeys = [] }) {
+function DataEditor({
+  data,
+  onDataChange,
+  showImportExport = true,
+  gameName,
+  onSnapshotUpdate,
+  hiddenTopLevelKeys = [],
+}) {
   const fileInputRef = useRef(null);
   const [isSaving, setIsSaving] = useState(false);
   // JSON 미리보기 기능 비활성화 (상태 제거)
 
   const setValueAtPath = (path, newVal) => {
-    onDataChange(prev => {
-      const base = typeof prev === 'object' && prev !== null ? prev : {};
+    onDataChange((prev) => {
+      const base = typeof prev === "object" && prev !== null ? prev : {};
       const clone = structuredClone(base);
       let cur = clone;
       for (let i = 0; i < path.length - 1; i++) {
@@ -155,13 +252,13 @@ function DataEditor({ data, onDataChange, showImportExport = true, gameName, onS
     reader.onload = (ev) => {
       try {
         const json = JSON.parse(ev.target.result);
-        if (json && typeof json === 'object') {
+        if (json && typeof json === "object") {
           onDataChange(json);
         }
-      } catch(err) {
-        alert('JSON 파싱 오류: ' + err.message);
+      } catch (err) {
+        alert("JSON 파싱 오류: " + err.message);
       } finally {
-        e.target.value = '';
+        e.target.value = "";
       }
     };
     reader.readAsText(file);
@@ -170,12 +267,12 @@ function DataEditor({ data, onDataChange, showImportExport = true, gameName, onS
   const buildObject = () => data;
 
   const handleExport = () => {
-  const dataStr = JSON.stringify(buildObject(), null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
+    const dataStr = JSON.stringify(buildObject(), null, 2);
+    const blob = new Blob([dataStr], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'data.json';
+    a.download = "data.json";
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -184,23 +281,29 @@ function DataEditor({ data, onDataChange, showImportExport = true, gameName, onS
   const handleSave = async () => {
     if (isSaving) return;
     if (!gameName || !gameName.trim()) {
-      alert('게임 이름을 먼저 입력해주세요.');
+      alert("게임 이름을 먼저 입력해주세요.");
       return;
     }
     if (data === undefined || data === null) {
-      alert('보낼 데이터가 없습니다.');
+      alert("보낼 데이터가 없습니다.");
       return;
     }
     try {
       setIsSaving(true);
-      const payload = { game_name: gameName, data };
-      await axios.post('/data-update', payload, { headers: { 'Content-Type': 'application/json' } });
-      const snapRes = await axios.get('/snapshot-log', { params: { game_name: gameName || '' } });
+
+      // 1. 데이터 업데이트
+      await updateGameData(gameName, data);
+
+      // 2. 스냅샷 로그 조회
+      const snapRes = await getSnapshotLog(gameName);
       const snapData = snapRes?.data;
-      if (onSnapshotUpdate && snapData) onSnapshotUpdate(snapData);
+
+      if (onSnapshotUpdate && snapData) {
+        onSnapshotUpdate(snapData);
+      }
     } catch (err) {
-      console.error('Failed to save data or refresh snapshot-log:', err);
-      alert('저장 중 오류가 발생했습니다.');
+      console.error("Failed to save data or refresh snapshot-log:", err);
+      alert("저장 중 오류가 발생했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -208,32 +311,57 @@ function DataEditor({ data, onDataChange, showImportExport = true, gameName, onS
 
   return (
     <div className="data-editor-container">
-      <div className="data-editor-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div
+        className="data-editor-header"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
         <h2 style={{ margin: 0 }}>게임 설정 편집</h2>
-        <div className="data-editor-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          className="data-editor-actions"
+          style={{ display: "flex", alignItems: "center", gap: 8 }}
+        >
           {showImportExport && (
             <>
-              <button onClick={() => fileInputRef.current?.click()}>가져오기(JSON)</button>
+              <button onClick={() => fileInputRef.current?.click()}>
+                가져오기(JSON)
+              </button>
               <button onClick={handleExport}>내보내기(JSON)</button>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="application/json,.json"
-                style={{ display: 'none' }}
+                style={{ display: "none" }}
                 onChange={handleImport}
               />
             </>
           )}
           {/* JSON 미리보기 토글 버튼 숨김 */}
-          <button onClick={handleSave} disabled={isSaving || !gameName?.trim()} title={!gameName?.trim() ? '게임 이름이 필요합니다' : '현재 데이터 저장'}>
-            {isSaving ? '저장 중…' : '변경 내용 저장'}
+          <button
+            onClick={handleSave}
+            disabled={isSaving || !gameName?.trim()}
+            title={
+              !gameName?.trim() ? "게임 이름이 필요합니다" : "현재 데이터 저장"
+            }
+          >
+            {isSaving ? "저장 중…" : "변경 내용 저장"}
           </button>
         </div>
       </div>
-    <div className="hierarchy-editor">
-  <NodeEditor path={[]} value={data} onChange={setValueAtPath} depth={0} hiddenTopLevelKeys={hiddenTopLevelKeys} />
+      <div className="hierarchy-editor">
+        <NodeEditor
+          path={[]}
+          value={data}
+          onChange={setValueAtPath}
+          depth={0}
+          hiddenTopLevelKeys={hiddenTopLevelKeys}
+        />
       </div>
-  {/* JSON 미리보기 영역 숨김 */}
+      {/* JSON 미리보기 영역 숨김 */}
     </div>
   );
 }

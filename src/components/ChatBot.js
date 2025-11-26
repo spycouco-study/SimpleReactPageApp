@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
-import axios from "axios";
 import "./ChatBot.css";
+import {
+  sendErrorBatch,
+  getSnapshotLog,
+  getGameData,
+  revertGame,
+  processCodeMessage,
+} from "../api/backend";
 
 function ChatBot({
   onMarkdownUpdate,
@@ -32,57 +38,42 @@ function ChatBot({
 
   // 게임 에러 배치가 들어오면 메시지 추가
   useEffect(() => {
-    if (gameErrorBatch) {
-      // iframe에서 이미 포맷된 error_report를 사용
-      const errorText =
-        gameErrorBatch.error_report || "에러 정보를 불러올 수 없습니다.";
+    if (!gameErrorBatch) return;
 
-      const errorMessage = {
-        id: `error-${Date.now()}`,
-        text: errorText,
-        sender: "bot",
-        type: "error-batch",
-        errorData: gameErrorBatch,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+    // iframe에서 이미 포맷된 error_report를 사용
+    const errorText =
+      gameErrorBatch.error_report || "에러 정보를 불러올 수 없습니다.";
 
-      // FastAPI 서버로 에러 전송
-      axios
-        .post("http://localhost:8000/client-error", {
-          type: "error-batch",
-          game_name: gameName || "",
-          game_version: "1.0.1",
-          collected_at: new Date().toISOString(),
-          error_count: gameErrorBatch.error_count || 0,
-          error_report: gameErrorBatch.error_report || "",
-          errors: [],
-        })
-        .then((response) => {
-          console.log("✅ FastAPI 서버로 에러 전송 성공:", response.data);
-        })
-        .catch((error) => {
-          console.error("❌ FastAPI 서버로 에러 전송 실패:", error);
-        });
+    const errorMessage = {
+      id: `error-${Date.now()}`,
+      text: errorText,
+      sender: "bot",
+      type: "error-batch",
+      errorData: gameErrorBatch,
+    };
+    setMessages((prev) => [...prev, errorMessage]);
 
-      // 에러 처리 완료 알림
-      if (typeof onErrorBatchHandled === "function") {
-        onErrorBatchHandled();
+    // async 함수 정의 후 즉시 실행
+    const sendError = async () => {
+      try {
+        await sendErrorBatch(gameName, gameErrorBatch);
+        console.log("✅ FastAPI 서버로 에러 전송 성공");
+      } catch (error) {
+        console.error("❌ FastAPI 서버로 에러 전송 실패:", error);
+      } finally {
+        if (typeof onErrorBatchHandled === "function") {
+          onErrorBatchHandled();
+        }
       }
-    }
+    };
+
+    sendError();
   }, [gameErrorBatch, onErrorBatchHandled, gameName]);
 
   // 공통: 스냅샷 로그 및 게임 데이터 최신화
   const refreshSnapshotAndGameData = async () => {
     try {
-      const snapRes = await axios.get("/snapshot-log", {
-        params: {
-          game_name: gameName || "",
-          _t: Date.now(), // 캐시 방지
-        },
-        headers: {
-          "Cache-Control": "no-cache",
-        },
-      });
+      const snapRes = await getSnapshotLog(gameName);
       const data = snapRes?.data;
       if (data && onSnapshotUpdate) {
         onSnapshotUpdate(data);
@@ -93,11 +84,8 @@ function ChatBot({
     // 이어서 게임 데이터 갱신
     if (onGameDataUpdate && gameName) {
       try {
-        const gdRes = await axios.get("/game_data", {
-          params: { game_name: gameName || "", _t: Date.now() },
-          headers: { Accept: "application/json", "Cache-Control": "no-cache" },
-        });
-        const payload = gdRes?.data;
+        const res = await getGameData(gameName);
+        const payload = res?.data;
         if (payload && typeof payload === "object") {
           onGameDataUpdate(payload);
         } else {
@@ -111,9 +99,7 @@ function ChatBot({
 
   const handleRevert = async () => {
     try {
-      const response = await axios.post("/revert", {
-        game_name: gameName || "",
-      });
+      const response = await revertGame(gameName);
 
       const botMessage = {
         text: response.data.reply || "이전 상태로 되돌렸습니다.",
@@ -135,34 +121,17 @@ function ChatBot({
     }
   };
 
-  const handleFixError = async (errorData) => {
-    // error_report를 그대로 사용
-    const errorReport =
-      errorData.error_report || "에러 정보를 불러올 수 없습니다.";
-
-    const fixRequestMessage = `다음 런타임 오류를 수정해주세요:\n\n${errorReport}`;
-
-    // 사용자 메시지로 추가
-    const userMessage = {
-      text: fixRequestMessage,
-      sender: "user",
-    };
+  const sendCodeMessage = async (messageText, tempText) => {
+    // 사용자 메시지 추가
+    const userMessage = { text: messageText, sender: "user" };
     setMessages((prev) => [...prev, userMessage]);
 
-    // 임시 응답 메시지 추가
-    const tempBotMessage = {
-      id: Date.now(),
-      text: "오류를 분석하고 수정하는 중입니다...",
-      sender: "bot",
-    };
+    // 임시 봇 메시지 추가
+    const tempBotMessage = { id: Date.now(), text: tempText, sender: "bot" };
     setMessages((prev) => [...prev, tempBotMessage]);
 
     try {
-      // 서버로 메시지 전송
-      const response = await axios.post("/process-code", {
-        message: fixRequestMessage,
-        game_name: gameName || "",
-      });
+      const response = await processCodeMessage(messageText, gameName);
 
       if (response.data.status === "success") {
         setMessages((prev) =>
@@ -186,12 +155,19 @@ function ChatBot({
       console.error("Error:", error);
       setMessages((prev) => [
         ...prev,
-        {
-          text: "오류 수정 요청 중 서버 오류가 발생했습니다.",
-          sender: "bot",
-        },
+        { text: "서버 오류 발생.", sender: "bot" },
       ]);
     }
+  };
+
+  const handleFixError = async (errorData) => {
+    // error_report를 그대로 사용
+    const errorReport =
+      errorData.error_report || "에러 정보를 불러올 수 없습니다.";
+
+    const fixRequestMessage = `다음 런타임 오류를 수정해주세요:\n\n${errorReport}`;
+
+    sendCodeMessage(fixRequestMessage, "오류를 분석하고 수정하는 중입니다...");
   };
 
   const handleSubmit = async (e) => {
@@ -202,63 +178,7 @@ function ChatBot({
     const currentMessage = inputMessage;
     setInputMessage("");
 
-    // 사용자 메시지를 대화 목록에 추가
-    const userMessage = {
-      text: currentMessage,
-      sender: "user",
-    };
-    setMessages((prev) => [...prev, userMessage]);
-
-    // 임시 응답 메시지 추가
-    const tempBotMessage = {
-      id: Date.now(),
-      text: "응답을 생성하는 중입니다...",
-      sender: "bot",
-    };
-    setMessages((prev) => [...prev, tempBotMessage]);
-
-    try {
-      // 서버로 메시지 전송
-      const response = await axios.post("/process-code", {
-        message: currentMessage,
-        game_name: gameName || "",
-      });
-
-      if (response.data.status === "success") {
-        // 성공적인 응답 처리
-        // 임시 메시지를 실제 응답으로 교체
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === tempBotMessage.id
-              ? { text: response.data.reply, sender: "bot" }
-              : msg
-          )
-        );
-
-        // 스냅샷/게임 데이터 최신화
-        await refreshSnapshotAndGameData();
-      } else {
-        // 오류 응답 처리
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === tempBotMessage.id
-              ? { text: "서버 오류: " + response.data.reply, sender: "bot" }
-              : msg
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      // 에러 메시지 표시
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: "서버 오류 발생.",
-          sender: "bot",
-        },
-      ]);
-    }
-
+    sendCodeMessage(currentMessage, "응답을 생성하는 중입니다...");
     setInputMessage("");
   };
 

@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
-import './MediaExplorer.css';
+import React, { useEffect, useState, useRef } from "react";
+import "./MediaExplorer.css";
+import { getSnapshotLog, getGameAssets, replaceAsset } from "../api/backend";
 
 /*
   MediaExplorer
@@ -38,22 +38,40 @@ function MediaExplorer({ gameName, isLocked, refreshToken, onSnapshotUpdate }) {
       return;
     }
     try {
-  setLoading(true);
+      setLoading(true);
       setError(null);
-      const res = await axios.get('/assets', {
-        params: { game_name: gameName, _t: Date.now() },
-        headers: { 'Accept': 'application/json', 'Cache-Control': 'no-cache' }
-      });
+
+      const res = await getGameAssets(gameName);
       const data = res?.data;
-      const images = Array.isArray(data?.images) ? data.images : [];
-      const sounds = Array.isArray(data?.sounds) ? data.sounds : [];
-  setAssets({ images, sounds });
-  setAssetStamp(Date.now()); // 새 목록 수신 시 스탬프 갱신
+
+      const backendUrl =
+        process.env.REACT_APP_BACKEND_URL || "http://localhost:8000";
+
+      const images = Array.isArray(data?.images)
+        ? data.images.map((img) => ({
+            ...img,
+            url: img.url.startsWith("http")
+              ? img.url
+              : `${backendUrl}${img.url}`,
+          }))
+        : [];
+
+      const sounds = Array.isArray(data?.sounds)
+        ? data.sounds.map((snd) => ({
+            ...snd,
+            url: snd.url.startsWith("http")
+              ? snd.url
+              : `${backendUrl}${snd.url}`,
+          }))
+        : [];
+
+      setAssets({ images, sounds });
+      setAssetStamp(Date.now()); // 새 목록 수신 시 스탬프 갱신
     } catch (err) {
-      console.error('Failed to fetch assets:', err);
-      setError('자산 목록을 불러오지 못했습니다.');
+      console.error("Failed to fetch assets:", err);
+      setError("자산 목록을 불러오지 못했습니다.");
     } finally {
-  setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -78,7 +96,9 @@ function MediaExplorer({ gameName, isLocked, refreshToken, onSnapshotUpdate }) {
         <h2>에셋 보기</h2>
       </div> */}
       {!isLocked && (
-        <div className="media-hint">게임 이름을 확정하면 에셋을 불러옵니다.</div>
+        <div className="media-hint">
+          게임 이름을 확정하면 에셋을 불러옵니다.
+        </div>
       )}
       {error && <div className="media-error">{error}</div>}
 
@@ -86,108 +106,179 @@ function MediaExplorer({ gameName, isLocked, refreshToken, onSnapshotUpdate }) {
         <section className="media-section">
           <h3>이미지</h3>
           <div className="thumb-grid">
-            {assets.images.length === 0 && <div className="empty">이미지가 없습니다.</div>}
+            {assets.images.length === 0 && (
+              <div className="empty">이미지가 없습니다.</div>
+            )}
             {assets.images.map((img, i) => {
-              const stampedUrl = assetStamp ? `${img.url}?v=${assetStamp}` : img.url;
+              const stampedUrl = assetStamp
+                ? `${img.url}?v=${assetStamp}`
+                : img.url;
               return (
-              <div key={i} className="thumb-card" title={img.name} onClick={() => setPreviewItem({ type: 'image', url: stampedUrl, name: img.name })}>
-                <div className="thumb thumb-image" style={{ backgroundImage: `url(${stampedUrl})` }} />
-                <div className="thumb-name" title={img.name}>{img.name}</div>
-              </div>
-            );})}
+                <div
+                  key={i}
+                  className="thumb-card"
+                  title={img.name}
+                  onClick={() =>
+                    setPreviewItem({
+                      type: "image",
+                      url: stampedUrl,
+                      name: img.name,
+                    })
+                  }
+                >
+                  <div
+                    className="thumb thumb-image"
+                    style={{ backgroundImage: `url(${stampedUrl})` }}
+                  />
+                  <div className="thumb-name" title={img.name}>
+                    {img.name}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 
         <section className="media-section">
           <h3>사운드</h3>
           <div className="thumb-grid">
-            {assets.sounds.length === 0 && <div className="empty">사운드가 없습니다.</div>}
+            {assets.sounds.length === 0 && (
+              <div className="empty">사운드가 없습니다.</div>
+            )}
             {assets.sounds.map((snd, i) => {
-              const stampedUrl = assetStamp ? `${snd.url}?v=${assetStamp}` : snd.url;
+              const stampedUrl = assetStamp
+                ? `${snd.url}?v=${assetStamp}`
+                : snd.url;
               return (
-              <div key={i} className="thumb-card" title={snd.name} onClick={() => setPreviewItem({ type: 'sound', url: stampedUrl, name: snd.name })}>
-                <div className="thumb thumb-audio">
-                  <span className="audio-icon">🔊</span>
+                <div
+                  key={i}
+                  className="thumb-card"
+                  title={snd.name}
+                  onClick={() =>
+                    setPreviewItem({
+                      type: "sound",
+                      url: stampedUrl,
+                      name: snd.name,
+                    })
+                  }
+                >
+                  <div className="thumb thumb-audio">
+                    <span className="audio-icon">🔊</span>
+                  </div>
+                  <div className="thumb-name" title={snd.name}>
+                    {snd.name}
+                  </div>
                 </div>
-                <div className="thumb-name" title={snd.name}>{snd.name}</div>
-              </div>
-            );})}
+              );
+            })}
           </div>
         </section>
       </div>
 
       {previewItem && (
         <div className="modal" onClick={() => setPreviewItem(null)}>
-          <div className={`modal-body ${previewItem.type === 'sound' ? 'sound-modal' : ''}`} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div
+            className={`modal-body ${
+              previewItem.type === "sound" ? "sound-modal" : ""
+            }`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <strong>{previewItem.name}</strong>
-              <button className="close" onClick={() => setPreviewItem(null)}>닫기</button>
+              <button className="close" onClick={() => setPreviewItem(null)}>
+                닫기
+              </button>
             </div>
-            {previewItem.type === 'image' && (
+            {previewItem.type === "image" && (
               <img src={previewItem.url} alt={previewItem.name} />
             )}
-            {previewItem.type === 'sound' && (
-              <audio autoPlay controls src={previewItem.url} style={{ width: '100%', marginTop: '16px' }} />
+            {previewItem.type === "sound" && (
+              <audio
+                autoPlay
+                controls
+                src={previewItem.url}
+                style={{ width: "100%", marginTop: "16px" }}
+              />
             )}
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12, gap: 8 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: 12,
+                gap: 8,
+              }}
+            >
               <button
                 onClick={() => {
                   if (!fileInputRef.current) return;
-                  fileInputRef.current.value = '';
+                  fileInputRef.current.value = "";
                   fileInputRef.current.click();
                 }}
                 disabled={uploading}
               >
-                {uploading ? '업로드 중…' : '다른 파일로 교체'}
+                {uploading ? "업로드 중…" : "다른 파일로 교체"}
               </button>
             </div>
             <input
               ref={fileInputRef}
               type="file"
-              accept={previewItem.type === 'image' ? 'image/*' : 'audio/mpeg,.mp3'}
-              style={{ display: 'none' }}
+              accept={
+                previewItem.type === "image" ? "image/*" : "audio/mpeg,.mp3"
+              }
+              style={{ display: "none" }}
               onChange={async (e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 if (!isLocked || !gameName?.trim()) {
-                  alert('게임 이름을 먼저 확정해주세요.');
+                  alert("게임 이름을 먼저 확정해주세요.");
                   return;
                 }
                 // MP3만 허용 (프론트 선검증)
-                if (previewItem.type === 'sound') {
+                if (previewItem.type === "sound") {
                   const nameLower = file.name.toLowerCase();
-                  if (!nameLower.endsWith('.mp3')) {
-                    alert('사운드 교체는 MP3 파일만 가능합니다.');
+                  if (!nameLower.endsWith(".mp3")) {
+                    alert("사운드 교체는 MP3 파일만 가능합니다.");
                     return;
                   }
                 }
                 try {
                   setUploading(true);
-                  const form = new FormData();
-                  form.append('game_name', gameName);
-                  form.append('old_name', previewItem.name);
-                  form.append('file', file);
-                  // 서버 호환: 일부 서버는 'typ'을, 일부는 'type'을 기대할 수 있음 → 둘 다 전송
-                  form.append('typ', previewItem.type);
-                  form.append('type', previewItem.type);
-                  await axios.post('/replace-asset', form);
-                  await fetchAssets();
+
+                  await replaceAsset(gameName, previewItem, file);
+                  await fetchAssets(); // 기존 asset 목록 갱신
+
                   const newStamp = Date.now();
                   setAssetStamp(newStamp);
-                  setPreviewItem((cur) => cur ? { ...cur, url: `${cur.url.split('?')[0]}?v=${newStamp}` } : cur);
+                  setPreviewItem((cur) =>
+                    cur
+                      ? {
+                          ...cur,
+                          url: `${cur.url.split("?")[0]}?v=${newStamp}`,
+                        }
+                      : cur
+                  );
                   // 에셋 교체로 버전이 증가하므로 스냅샷 로그 갱신
                   try {
                     if (onSnapshotUpdate) {
-                      const snapRes = await axios.get('/snapshot-log', { params: { game_name: gameName || '' } });
+                      const snapRes = await getSnapshotLog(gameName);
                       const data = snapRes?.data;
                       if (data) onSnapshotUpdate(data);
                     }
                   } catch (snapErr) {
-                    console.error('Failed to refresh snapshot-log after asset replace:', snapErr);
+                    console.error(
+                      "Failed to refresh snapshot-log after asset replace:",
+                      snapErr
+                    );
                   }
                 } catch (err) {
-                  console.error('replace-asset failed:', err);
-                  alert('업로드 중 오류가 발생했습니다.');
+                  console.error("replace-asset failed:", err);
+                  alert("업로드 중 오류가 발생했습니다.");
                 } finally {
                   setUploading(false);
                 }

@@ -6,10 +6,15 @@ import ReactMarkdown from "react-markdown";
 import BoundingBoxEditor from "./components/BoundingBoxEditor";
 import DataEditor from "./components/DataEditor";
 import SnapshotTree from "./components/SnapshotTree";
-import axios from "axios";
 import MediaExplorer from "./components/MediaExplorer";
 import GameIframe from "./components/GameIframe";
 import GameEmbed from "./components/GameEmbed";
+import {
+  getGameSpec,
+  getGameData,
+  getSnapshotLog,
+  getChat,
+} from "./api/backend";
 
 function App() {
   const [markdownContent, setMarkdownContent] = useState(""); //('# Alparka 놀이공원 기획서\n\n[기획서 내용]');
@@ -76,27 +81,15 @@ function App() {
       if (gameName.trim() === "") return; // 버튼 disabled 조건과 동일한 가드
       setIsGameNameLocked(true);
       // 게임 이름 확정 시 게임 불러오기
-      setScriptUrl(`http://localhost:8080/${gameName.trim()}`);
+      const GAME_SERVER =
+        process.env.REACT_APP_GAME_URL || "http://localhost:8080";
+      setScriptUrl(`${GAME_SERVER}/${gameName.trim()}`);
       setReloadToken((k) => k + 1);
       // 게임 이름 확정 시 미디어도 초기 로드 필요 -> 토큰 증가
       setAssetRefreshToken((t) => t + 1);
       try {
-        const query = new URLSearchParams({
-          game_name: gameName.trim(),
-        }).toString();
-        const res = await fetch(`/game_data?${query}`, {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        });
-        let payload;
-        try {
-          // JSON 응답 시도
-          payload = await res.json();
-        } catch (e) {
-          // 텍스트로 온 경우 파싱
-          const text = await res.text();
-          payload = JSON.parse(text);
-        }
+        const res = await getGameData(gameName);
+        const payload = res?.data;
         if (payload && typeof payload === "object") {
           setDataEditorData(payload);
         } else {
@@ -105,53 +98,20 @@ function App() {
 
         // 이어서 스냅샷 로그 갱신
         try {
-          const snapQuery = new URLSearchParams({
-            game_name: gameName.trim(),
-          }).toString();
-          const snapRes = await fetch(`/snapshot-log?${snapQuery}`, {
-            method: "GET",
-            headers: { Accept: "application/json" },
-          });
-          let snapPayload;
-          try {
-            snapPayload = await snapRes.json();
-          } catch (e2) {
-            const text2 = await snapRes.text();
-            snapPayload = JSON.parse(text2);
-          }
+          const snapRes = await getSnapshotLog(gameName);
+
+          let snapPayload = snapRes?.data;
           // 기존 검증 로직 사용
           handleSnapshotUpdate(snapPayload);
         } catch (snapErr) {
           console.error("Failed to GET /snapshot-log:", snapErr);
         }
 
-        // // 이어서 스펙(마크다운) 갱신 - 단순화: 문자열이라고 가정
-        // try {
-        //   const specRes = await axios.get('/spec', {
-        //     params: { game_name: gameName.trim() },
-        //     responseType: 'text'
-        //   });
-        //   const mdText = typeof specRes.data === 'string' ? specRes.data : String(specRes.data ?? '');
-        //   setMarkdownContent(mdText);
-        // } catch (specErr) {
-        //   console.error('Failed to GET /spec:', specErr);
-        // }
-        // 제출 성공 후 갱신된 사양서 가져오기`
         try {
-          const specRes = await axios.get("/spec", {
-            params: {
-              game_name: gameName || "",
-            },
-          });
+          const specRes = await getGameSpec(gameName);
           if (specRes?.data) {
-            //if (typeof onMarkdownUpdate === 'function') {
             setMarkdownContent(specRes.data);
-            //}
-            // setMessages(prev => [...prev, {
-            //     text: '갱신된 사양서를 불러왔습니다.',
-            //     sender: 'bot',
-            //     type: 'comment'
-            // }]);
+            // 필요시 메시지 처리 등 UI 업데이트
           }
         } catch (specError) {
           console.group("사양서 갱신 오류");
@@ -161,11 +121,7 @@ function App() {
             console.error("서버 응답 데이터:", specError.response.data);
           }
           console.groupEnd();
-          // setMessages(prev => [...prev, {
-          //     text: '사양서를 불러오는 중 오류가 발생했습니다.',
-          //     sender: 'bot',
-          //     type: 'comment'
-          // }]);
+          // UI 메시지 업데이트
         }
       } catch (err) {
         console.error("Failed to GET /game_data:", err);
@@ -173,20 +129,9 @@ function App() {
 
       // 마지막으로 채팅 이력 로드 (/load-chat)
       try {
-        const chatQuery = new URLSearchParams({
-          game_name: gameName.trim(),
-        }).toString();
-        const chatRes = await fetch(`/load-chat?${chatQuery}`, {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        });
-        let chatPayload;
-        try {
-          chatPayload = await chatRes.json();
-        } catch (e) {
-          const text = await chatRes.text();
-          chatPayload = JSON.parse(text);
-        }
+        const chatRes = await getChat(gameName);
+
+        let chatPayload = chatRes?.data;
         if (chatPayload && Array.isArray(chatPayload.chat)) {
           // from -> sender 로 매핑
           const normalized = chatPayload.chat.map((m, i) => ({
